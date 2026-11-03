@@ -1,6 +1,6 @@
 {
   "name": "ai-trpg",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "description": "龙娘跑团：AI主持的线上跑团网页",
@@ -18,7 +18,7 @@
     "make-admin": "tsx server/make-admin.ts",
     "reset": "tsx server/reset.ts",
     "check-scenario": "tsx server/check-scenario.ts",
-    "test": "tsx --test test/e2e.test.ts test/game.test.ts test/admin.test.ts test/robustness.test.ts test/studio.test.ts test/ai.test.ts test/rules.test.ts test/scenario.test.ts test/upgrade.test.ts test/v020.test.ts test/security.test.ts test/v030.test.ts test/v031.test.ts test/openrouter.test.ts test/v032.test.ts test/v040.test.ts test/v041.test.ts test/v043.test.ts test/v044.test.ts test/v045.test.ts test/v050.test.ts test/pets.test.ts test/v060.test.ts test/v070-shop.test.ts test/v070.test.ts test/groups.test.ts test/v070-review.test.ts test/v071-untimed.test.ts test/v071-gear.test.ts test/v071-shop-admin.test.ts test/v071-guest-dungeon-hall.test.ts test/v071-dm.test.ts test/v071-misc.test.ts test/v080-schedule.test.ts test/v080-push.test.ts test/v080-ai-seat.test.ts test/v080-highlights.test.ts test/v080-editor.test.ts test/v080-stability.test.ts test/v080-release-notes.test.ts test/v081.test.ts test/v082.test.ts test/v083.test.ts test/v090-5e.test.ts test/v091.test.ts test/v092.test.ts test/v100.test.ts test/v101.test.ts test/v102.test.ts",
+    "test": "tsx --test test/e2e.test.ts test/game.test.ts test/admin.test.ts test/robustness.test.ts test/studio.test.ts test/ai.test.ts test/rules.test.ts test/scenario.test.ts test/upgrade.test.ts test/v020.test.ts test/security.test.ts test/v030.test.ts test/v031.test.ts test/openrouter.test.ts test/v032.test.ts test/v040.test.ts test/v041.test.ts test/v043.test.ts test/v044.test.ts test/v045.test.ts test/v050.test.ts test/pets.test.ts test/v060.test.ts test/v070-shop.test.ts test/v070.test.ts test/groups.test.ts test/v070-review.test.ts test/v071-untimed.test.ts test/v071-gear.test.ts test/v071-shop-admin.test.ts test/v071-guest-dungeon-hall.test.ts test/v071-dm.test.ts test/v071-misc.test.ts test/v080-schedule.test.ts test/v080-push.test.ts test/v080-ai-seat.test.ts test/v080-highlights.test.ts test/v080-editor.test.ts test/v080-stability.test.ts test/v080-release-notes.test.ts test/v081.test.ts test/v082.test.ts test/v083.test.ts test/v090-5e.test.ts test/v091.test.ts test/v092.test.ts test/v100.test.ts test/v101.test.ts test/v102.test.ts test/map.test.ts test/spots.test.ts test/v110.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

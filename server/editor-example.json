@@ -54,21 +54,27 @@
         { "to": "backyard", "minutes": 1 },
         { "to": "temple-alley", "minutes": 10 }
       ],
-      "features": ["柜台下面的旧账本", "门口排队的街坊"]
+      "features": ["柜台下面的旧账本", "门口排队的街坊"],
+      "x": 40,
+      "y": 58
     },
     {
       "key": "backyard",
       "name": "后院",
       "description": "蒸笼一层层摞着，晾糕的竹架子空了一格。墙根下有几个白乎乎的猫爪印，小满蹲在井边洗蒸笼布。",
       "exits": [{ "to": "shop-front", "minutes": 1 }],
-      "features": ["空了一格的竹架子", "墙根的猫爪印", "井边洗东西的小满"]
+      "features": ["空了一格的竹架子", "墙根的猫爪印", "井边洗东西的小满"],
+      "x": 40,
+      "y": 36
     },
     {
       "key": "temple-alley",
       "name": "城隍庙后巷",
       "description": "城隍庙后面一条窄窄的巷子，几个衣衫破旧的孩子蹲在墙角，嘴边还沾着糕屑。",
       "exits": [{ "to": "shop-front", "minutes": 10 }],
-      "features": ["墙角的油纸", "蹲在墙角的孩子们"]
+      "features": ["墙角的油纸", "蹲在墙角的孩子们"],
+      "x": 80,
+      "y": 64
     }
   ],
   "truth": {

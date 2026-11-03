@@ -13,10 +13,12 @@ import {
   type AttributeKey,
 } from '../../shared/rules';
 import type { Attribute2 } from '../../shared/rules2';
+import { anyExit, bothWays, hurried, hurriedPlaces, openExits, pathKey, routeBetween, routesFrom, travelText, walkRoute } from '../../shared/map';
 import type { ToolDefinition } from '../ai/types';
 import { actionBlocker, applyHarm, check, penaltiesFor, resolveCheck, roll2d6, type CheckResult, type Penalty, type Rng } from './rules';
 import type { Scenario } from './scenario';
-import { stateOf, type Character, type World } from './world';
+import { exitsFoundBy, exitsKnownTo, stateOf, type Character, type World } from './world';
+import { cleanSpot, flagText, matchSpot, sameSpot, spotFlags, spotName } from '../../shared/spots';
 
 // 主持AI能调用的工具，以及程序怎么执行它们。
 // 执行时只改这里的副本，AI 全部结算成功后才一次性写进数据库；中途出错就整个作废、稍后重来。
@@ -89,14 +91,58 @@ export const DM_TOOLS: ToolDefinition[] = [
   },
   {
     name: 'move_character',
-    description: '角色到了另一个地点。路上经过的地方不用一一移动，只移动到最后停下的地点。',
+    description:
+      '角色到了另一个地点。程序按地图（地点的出口和路上的分钟）找最快的路线，路上经过的地方不用一一移动，只移动到目的地。这一次行动的时间不够走到的，只走到半路：结果里写着停在哪、还差多久，叙述照结果写。地图上没有路的（剧本没写出口：被人带走、坐船、翻墙抄近路）在 via 里写清楚怎么去的。',
     input_schema: {
       type: 'object',
       properties: {
         character: characterParam,
         location: { type: 'string', description: '目的地的 key' },
+        hurry: { type: 'boolean', description: '赶路（跑、骑马、坐车）：路上的时间按一半算' },
+        via: { type: 'string', description: '地图上没有路时，是怎么去的（一句话）；地图上有路就不填' },
       },
       required: ['character', 'location'],
+    },
+  },
+  {
+    name: 'reveal_exit',
+    description: '角色发现了一条暗门、暗道（剧本里 hidden 的出口）：从这以后它画在这些角色的地图上，也走得通。角色直接从暗道走过去时，程序会自动记下，不用再调用。',
+    input_schema: {
+      type: 'object',
+      properties: {
+        from: { type: 'string', description: '暗道一头的地点 key' },
+        to: { type: 'string', description: '另一头的地点 key' },
+        characters: { type: 'array', items: { type: 'integer' }, description: '发现它的角色编号（在场一起看到的可以填多个）' },
+      },
+      required: ['from', 'to', 'characters'],
+    },
+  },
+  {
+    name: 'set_spot',
+    description:
+      '在这个地点里换了站的地方（站位）：走到窗边、退到门口、凑到某人身边、冲到敌人跟前。spot 写剧本里这个地点的站位名（locations 的 spots）；剧本没写合适的，按描述起一个短名字（12 个字以内）；空字符串是回到大家中间。凑到某个人身边，就写他的站位（他在大家中间就写空字符串）。换了地点程序会清空站位，不用调用。打仗时敌人走动也用它（填 enemy，不填 character）。',
+    input_schema: {
+      type: 'object',
+      properties: {
+        character: characterParam,
+        enemy: { type: 'string', description: '敌人在这场战斗里的编号（敌人走动时填）' },
+        spot: { type: 'string', description: '站位名；空字符串是回到大家中间' },
+      },
+      required: ['spot'],
+    },
+  },
+  {
+    name: 'noise',
+    description:
+      '附近也听得到的动静（喊叫、枪响、打斗、钟声、爆炸）：程序按地图找到路程在 reach_minutes 分钟以内、不在现场的角色，把 text 单独发给他们。在场的人从叙述里就知道了，不用发。',
+    input_schema: {
+      type: 'object',
+      properties: {
+        text: { type: 'string', description: '离得远的人听到了什么、大概从哪个方向，一句话，只写听得到的，第三人称' },
+        reach_minutes: { type: 'integer', description: '走路几分钟以内的地方听得到：喊叫、争吵 2～5，枪响、打斗 5～15，钟声、爆炸 15～60' },
+        location: { type: 'string', description: '动静在哪个地点的 key；不填就是行动的角色现在所在的地点' },
+      },
+      required: ['text', 'reach_minutes'],
     },
   },
   {
@@ -214,6 +260,8 @@ export type ResolutionInput = {
   actorId: number;
   /** 这个行动结束的游戏时间。 */
   gameEnd: number;
+  /** 这个行动在游戏里花的分钟数（V1.0.x 地图）：路上的时间不能超过它，不够就只走到半路；不写不限。 */
+  minutes?: number;
   rng: Rng;
   /** 角色会不会死（房主选的，V0.6.0；不写就是会）。 */
   allowDeath?: boolean;
@@ -229,6 +277,14 @@ export class ResolutionContext {
   readonly characters = new Map<number, Character>();
   readonly actorId: number;
   readonly gameEnd: number;
+  /** 这次结算里每个角色能花在路上的时间（V1.0.x 地图）。 */
+  readonly travelBudget: number;
+  /** 每个角色这次结算里已经花在路上的时间。 */
+  protected readonly travelUsed = new Map<number, number>();
+  /** 这次结算里的动静：结算做完再定谁听得到（settleNoise）。 */
+  protected readonly noises: { text: string; reach: number; origin: string }[] = [];
+  /** 行动的人从开始时的地方走出去的第一站（走暗道、按 via 走的是 null）；没走过是 undefined。留在原地的人看见他往哪走了。 */
+  protected firstLeg: string | null | undefined = undefined;
   protected readonly rng: Rng;
   protected readonly clueHolders: Map<string, Set<number>>;
   protected readonly startLocations = new Map<number, string | null>();
@@ -243,6 +299,8 @@ export class ResolutionContext {
   readonly clueGrants = new Map<string, Set<number>>();
   readonly privateMessages: { characterId: number; text: string }[] = [];
   readonly changes: { characterId: number; text: string }[] = [];
+  /** 站位（V1.0.x）：这次结算里谁刚从哪些敌人身边走开（角色编号 → 敌人编号）：它们趁机打的那一下，近战照样打得到。 */
+  protected readonly leftFoes = new Map<number, Set<string>>();
   readonly changed = new Set<number>();
   ending: { key: string; title: string; epilogue: string } | null = null;
   worldChanged = false;
@@ -260,6 +318,7 @@ export class ResolutionContext {
     }
     this.actorId = input.actorId;
     this.gameEnd = input.gameEnd;
+    this.travelBudget = typeof input.minutes === 'number' && input.minutes >= 0 ? input.minutes : Infinity;
     this.rng = input.rng;
     this.clueHolders = new Map([...input.clueHolders].map(([k, v]) => [k, new Set(v)]));
     this.allowDeath = input.allowDeath ?? true;
@@ -328,11 +387,16 @@ export class ResolutionContext {
     const ids = [...this.characters.values()].filter((c) => !c.dead && !shown.has(c.id) && c.location === from).map((c) => c.id);
     if (!ids.length) return null;
     const place = (key: string) => this.scenario.locations.find((l) => l.key === key);
-    // 按出口找最近的路，记下第一站
+    // 程序按地图走的（V1.0.x）：他真走的第一段；走暗道、按 via 走的，看不出往哪去了
+    if (this.firstLeg !== undefined) {
+      const step = this.firstLeg;
+      return { ids, from: place(from)?.name ?? from, to: step ? (place(step)?.name ?? step) : null, far: step !== null && step !== to };
+    }
+    // 按出口找最近的路，记下第一站（暗道不算：留在原地的人看不出他是从暗门走的）
     const firstStep = new Map<string, string>();
     const queue: string[] = [];
     for (const e of place(from)?.exits ?? []) {
-      if (!firstStep.has(e.to)) {
+      if (!e.hidden && !firstStep.has(e.to)) {
         firstStep.set(e.to, e.to);
         queue.push(e.to);
       }
@@ -340,7 +404,7 @@ export class ResolutionContext {
     while (queue.length && !firstStep.has(to)) {
       const k = queue.shift()!;
       for (const e of place(k)?.exits ?? []) {
-        if (e.to !== from && !firstStep.has(e.to)) {
+        if (!e.hidden && e.to !== from && !firstStep.has(e.to)) {
           firstStep.set(e.to, firstStep.get(k)!);
           queue.push(e.to);
         }
@@ -360,6 +424,12 @@ export class ResolutionContext {
         return this.giveClue(input);
       case 'move_character':
         return this.moveCharacter(input);
+      case 'reveal_exit':
+        return this.revealExit(input);
+      case 'noise':
+        return this.noise(input);
+      case 'set_spot':
+        return input.enemy !== undefined && input.enemy !== null && input.enemy !== '' ? this.setEnemySpot(input) : this.setSpot(input);
       case 'update_character':
         return this.updateCharacter(input);
       case 'update_npc':
@@ -611,18 +681,233 @@ export class ResolutionContext {
     });
   }
 
+  /** 地点的名字。 */
+  protected locName(key: string | null): string {
+    return (key && this.scenario.locations.find((l) => l.key === key)?.name) || key || '不明';
+  }
+
+  /** 在某个地点、活着的其他角色的名字。 */
+  private peopleAt(key: string, except: number): string[] {
+    return [...this.characters.values()].filter((x) => x.id !== except && !x.dead && x.location === key).map((x) => x.name);
+  }
+
+  /** 记下一个角色发现了暗道（pathKey）；新发现的返回 true。 */
+  private findExit(c: Character, key: string): boolean {
+    const found = exitsFoundBy(this.world, c.id);
+    if (found.has(key)) return false;
+    found.add(key);
+    this.world.exitsFound = { ...this.world.exitsFound, [String(c.id)]: [...found].sort() };
+    this.worldChanged = true;
+    return true;
+  }
+
+  /**
+   * 移动（V1.0.x 起按地图走）：找最快的路线（暗道要发现了才走得通；发现了的路走不到、算上暗道走得到的，走过去就是发现了）；
+   * 这次结算的时间不够的，走到来得及到的最后一个地点为止。地图上没有路的，要写 via（怎么去的），不算路上的时间。
+   * 路过的地点也算去过；路过的地方有人的，告诉主持人。
+   */
   private moveCharacter(input: Input): ToolResult {
     const c = this.character(input.character);
     if (c.dead) throw new ToolError(`${c.name}已经死了`);
     const loc = this.scenario.locations.find((l) => l.key === input.location);
     if (!loc) throw new ToolError(`没有这个地点：${String(input.location)}，可用的有：${this.scenario.locations.map((l) => l.key).join('、')}`);
     if (c.location === loc.key) return ok({ character: c.name, location: loc.name, note: '本来就在这里' });
-    c.location = loc.key;
-    if (!c.visited.includes(loc.key)) c.visited.push(loc.key);
+    const from = c.location;
+    const hurry = input.hurry === true;
+    const via = text(input.via, 60);
+    const places = this.scenario.locations;
+    // 赶路按赶路的时间找路线（一段段都是短路的，赶路也快不了多少）
+    const graph = hurry ? hurriedPlaces(places) : places;
+    const known = exitsKnownTo(this.world, this.scenario, this.characters.values(), c.id);
+    let route = from ? routeBetween(graph, from, loc.key, openExits(known)) : null;
+    // 明路走不到：写了 via 的照 via 的去法过去；没写的，算上暗道走得到就走暗道（走过去就是发现了）
+    if (from && !route && !via) route = routeBetween(graph, from, loc.key, anyExit);
+
+    // 地图上没有路：写了怎么去的才能过去（不算路上的时间，也不算发现了暗道）
+    if (!from || !route) {
+      if (from && !via) {
+        throw new ToolError(
+          `从「${this.locName(from)}」到「${loc.name}」地图上没有路（剧本没写这样的出口）。有别的去法（被人带走、坐船、抄小路）的，在 via 里写清楚怎么去的；不然换一个走得到的地点`,
+        );
+      }
+      if (c.id === this.actorId && from === this.startLocations.get(c.id)) this.firstLeg ??= null;
+      this.arrive(c, loc.key, []);
+      return ok({ character: c.name, location: loc.name, ...(via ? { via, note: '地图上没有这条路，按 via 写的去法到的' } : {}), other_characters_here: this.peopleAt(loc.key, c.id) });
+    }
+
+    const used = this.travelUsed.get(c.id) ?? 0;
+    const walked = walkRoute(route, Math.max(0, this.travelBudget - used));
+    this.travelUsed.set(c.id, used + walked.used);
+    // 走过的暗道：走过去就是发现了。从明的那一面穿过一道门（对面那一面是暗门），也就知道了这条路
+    const secret: string[] = [];
+    const reachedAt = route.path.indexOf(walked.stop);
+    for (let i = 0; i < reachedAt; i++) {
+      const a = route.path[i];
+      const b = route.path[i + 1];
+      const exits = places.find((l) => l.key === a)?.exits.filter((e) => e.to === b) ?? [];
+      const same = exits.filter((e) => (hurry ? hurried(e.minutes) : e.minutes) === route.steps[i]);
+      const exit = same.find((e) => !e.hidden) ?? same[0] ?? exits[0];
+      const key = pathKey(a, b);
+      const back = places.find((l) => l.key === b)?.exits.some((e) => e.to === a && e.hidden);
+      if (exit?.hidden) {
+        this.findExit(c, key);
+        if (!known.has(key)) secret.push(`${this.locName(a)} → ${this.locName(b)}`);
+      } else if (back) this.findExit(c, key);
+      // 行动的人从这次结算开始时的地方走出去的第一段：留在原地的人看见他往哪走了（走暗道的看不出来）
+      if (i === 0 && c.id === this.actorId && a === this.startLocations.get(c.id)) this.firstLeg ??= exit?.hidden ? null : b;
+    }
+    for (const k of walked.passed) if (!c.visited.includes(k)) c.visited.push(k);
+    const passed = walked.passed.map((k) => ({ place: this.locName(k), people: this.peopleAt(k, c.id) }));
+    const routeText = route.path.map((k) => this.locName(k)).join(' → ');
+    const time = { minutes: walked.used, ...(hurry ? { hurry: true } : {}) };
+    if (walked.stop === from) {
+      return ok({
+        character: c.name,
+        arrived: false,
+        location: this.locName(from),
+        route: routeText,
+        still_need_minutes: walked.left,
+        note: `这一次行动的时间不够走到下一个地方：${c.name}还在「${this.locName(from)}」。叙述写他刚动身、走在路上，下次行动接着走`,
+      });
+    }
+    this.arrive(c, walked.stop, passed.map((p) => p.place));
+    const arrived = walked.stop === loc.key;
+    return ok({
+      character: c.name,
+      ...(arrived ? { location: loc.name } : { arrived: false, stopped_at: this.locName(walked.stop), destination: loc.name, still_need_minutes: walked.left }),
+      route: routeText,
+      travel: time,
+      ...(passed.length ? { passed_by: passed } : {}),
+      ...(secret.length ? { secret_passage: secret, secret_note: '走的是暗道：他发现了这条路，以后地图上画着' } : {}),
+      other_characters_here: this.peopleAt(walked.stop, c.id),
+      ...(arrived
+        ? {}
+        : { note: `这一次行动的时间只够走到「${this.locName(walked.stop)}」，到「${loc.name}」还要 ${travelText(walked.left)}：叙述写他走到这里为止，下次行动接着走` }),
+    });
+  }
+
+  /** 站位（V1.0.x）：角色在这个地点里换了站的地方。 */
+  private setSpot(input: Input): ToolResult {
+    const c = this.character(input.character);
+    if (c.dead) throw new ToolError(`${c.name}已经死了`);
+    if (!c.location) throw new ToolError(`${c.name}不在任何地点`);
+    const loc = this.scenario.locations.find((l) => l.key === c.location);
+    // 照抄了提示里的「壁炉边（嘈杂）」、写了「大家中间」的，对上剧本里的站位
+    const spot = matchSpot(loc, input.spot);
+    if ((c.spot ?? null) === spot) return ok({ character: c.name, spot: spotName(spot), note: '本来就站在这里' });
+    // 从有敌人的站位走开：身边的敌人通常趁机打一下。记下是哪几个，这次结算里它们照样打得到他（近战）
+    const leftFoes = this.foesBeside(c);
+    if (leftFoes.length) {
+      const set = this.leftFoes.get(c.id) ?? new Set<string>();
+      for (const f of leftFoes) set.add(f.id);
+      this.leftFoes.set(c.id, set);
+    }
+    c.spot = spot;
     this.changed.add(c.id);
-    this.changes.push({ characterId: c.id, text: `来到：${loc.name}` });
-    const here = [...this.characters.values()].filter((x) => x.id !== c.id && !x.dead && x.location === loc.key).map((x) => x.name);
-    return ok({ character: c.name, location: loc.name, other_characters_here: here });
+    this.changes.push({ characterId: c.id, text: `站位：${spotName(spot)}` });
+    const flags = flagText(spotFlags(loc, spot));
+    const beside = [...this.characters.values()].filter((x) => x.id !== c.id && !x.dead && x.location === c.location && sameSpot(x.spot, spot)).map((x) => x.name);
+    const invented = spot && !loc?.spots?.some((x) => x.name === spot);
+    return ok({
+      character: c.name,
+      spot: spotName(spot),
+      ...(flags ? { flags } : {}),
+      beside,
+      ...(leftFoes.length
+        ? { left_enemies: `${c.name}从${leftFoes.map((f) => `${f.name}（${f.id}）`).join('、')}身边走开了：他们通常趁机打一下（叙述里写上）。${this.freeHitHow()}` }
+        : {}),
+      ...(invented && loc?.spots?.length ? { note: `剧本里这个地点的站位是：${loc.spots.map((x) => x.name).join('、')}；你起的这个名字照记下（没有属性）` } : {}),
+    });
+  }
+
+  /** 敌人换站位：第二版、5E 的战斗里才有敌人（各自的结算里改写这个）。 */
+  protected setEnemySpot(_input: Input): ToolResult {
+    throw new ToolError('这一局没有在打的敌人');
+  }
+
+  /** 和这个角色站在一起、还能动手的敌人：第二版、5E 的战斗里才有。 */
+  protected foesBeside(_c: Character): { id: string; name: string }[] {
+    return [];
+  }
+
+  /** 走开时敌人趁机打的那一下用哪个工具（第二版、5E 各自写）。 */
+  protected freeHitHow(): string {
+    return '';
+  }
+
+  /** 这个敌人是不是刚被这个角色从身边甩开（这次结算里）：是的话这一下近战照样打得到，用一次就没了。 */
+  protected takeFreeHit(characterId: number, enemyId: string): boolean {
+    const set = this.leftFoes.get(characterId);
+    if (!set?.has(enemyId)) return false;
+    set.delete(enemyId);
+    return true;
+  }
+
+  /** 角色到了一个地点（记下去过、变化）。换了地点，站位清空。 */
+  private arrive(c: Character, key: string, passed: string[]) {
+    c.location = key;
+    c.spot = null;
+    if (!c.visited.includes(key)) c.visited.push(key);
+    this.changed.add(c.id);
+    this.changes.push({ characterId: c.id, text: passed.length ? `来到：${this.locName(key)}（路过${passed.join('、')}）` : `来到：${this.locName(key)}` });
+  }
+
+  /** 发现暗道（V1.0.x）：剧本里这两个地点之间要有 hidden 的出口。 */
+  private revealExit(input: Input): ToolResult {
+    const from = String(input.from ?? '');
+    const to = String(input.to ?? '');
+    const places = this.scenario.locations;
+    const exists = places.some((l) => (l.key === from && l.exits.some((e) => e.to === to && e.hidden)) || (l.key === to && l.exits.some((e) => e.to === from && e.hidden)));
+    if (!exists) {
+      const all = places.flatMap((l) => l.exits.filter((e) => e.hidden).map((e) => `${l.key} → ${e.to}`));
+      throw new ToolError(`「${from}」和「${to}」之间没有暗道（剧本里 hidden 的出口）。${all.length ? `剧本里的暗道：${all.join('、')}` : '这个剧本没有暗道'}`);
+    }
+    const ids = Array.isArray(input.characters) ? input.characters : [];
+    if (!ids.length) throw new ToolError('characters 至少写一个角色');
+    const who = ids.map((raw) => this.character(raw));
+    const key = pathKey(from, to);
+    const fresh = who.filter((c) => this.findExit(c, key));
+    for (const c of fresh) {
+      this.changed.add(c.id);
+      this.changes.push({ characterId: c.id, text: `发现了暗道：${this.locName(from)} ↔ ${this.locName(to)}` });
+    }
+    return ok({ passage: `${this.locName(from)} ↔ ${this.locName(to)}`, found_by: fresh.map((c) => c.name), ...(fresh.length < who.length ? { already_known: who.filter((c) => !fresh.includes(c)).map((c) => c.name) } : {}) });
+  }
+
+  /**
+   * 动静（V1.0.x）：路程在 reach_minutes 以内的人听得到。声音两头都传、穿得过暗门（按不分方向的完整地形算）。
+   * 谁收到等这次结算做完再定（settleNoise）：看得到这次叙述的人从叙述里就知道了，不另外发；主持人这里先告诉他现在听得到的人。
+   */
+  private noise(input: Input): ToolResult {
+    const message = text(input.text, 300);
+    if (!message) throw new ToolError('text 不能为空');
+    const reach = Number.isInteger(input.reach_minutes) ? Math.max(1, Math.min(60, input.reach_minutes as number)) : null;
+    if (reach === null) throw new ToolError('reach_minutes 要写整数分钟（1～60）');
+    const actor = this.characters.get(this.actorId);
+    const origin = typeof input.location === 'string' && input.location ? input.location : (actor?.location ?? null);
+    if (!origin || !this.scenario.locations.some((l) => l.key === origin)) {
+      throw new ToolError(`没有这个地点：${String(input.location ?? '')}，可用的有：${this.scenario.locations.map((l) => l.key).join('、')}`);
+    }
+    this.noises.push({ text: message, reach, origin });
+    const heard = this.hearers({ reach, origin }, actor?.location ? [...this.characters.values()].filter((c) => c.location === actor.location).map((c) => c.id) : [])
+      .map((c) => `${c.name}（在${this.locName(c.location)}）`);
+    return ok({ heard_by: heard, ...(heard.length ? {} : { note: '附近没有别的角色听得到' }) });
+  }
+
+  /** 听得到一处动静的人：活着、不是行动的人、不在 except 里、路程在范围内。 */
+  private hearers(n: { reach: number; origin: string }, except: number[]): Character[] {
+    const routes = routesFrom(bothWays(this.scenario.locations), n.origin, anyExit);
+    const skip = new Set([this.actorId, ...except]);
+    return [...this.characters.values()].filter((c) => {
+      if (c.dead || skip.has(c.id) || !c.location) return false;
+      const minutes = c.location === n.origin ? 0 : routes.get(c.location)?.minutes;
+      return minutes !== undefined && minutes <= n.reach;
+    });
+  }
+
+  /** 结算做完、定了叙述给谁看以后：动静单独告诉听得到、又看不到这次叙述的人（每人每处动静一句）。 */
+  settleNoise(audience: number[]) {
+    for (const n of this.noises.splice(0)) for (const c of this.hearers(n, audience)) this.privateMessages.push({ characterId: c.id, text: n.text });
   }
 
   private updateCharacter(input: Input): ToolResult {

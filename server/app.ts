@@ -34,6 +34,7 @@ import { Cards5e } from './cards5e';
 import { registerScheduleRoutes } from './routes/schedule';
 import { registerPushRoutes } from './routes/push';
 import { registerAiSeatRoutes } from './routes/ai-seats';
+import { registerPersonaRoutes } from './routes/personas';
 import { registerHighlightRoutes } from './routes/highlights';
 import { registerEditorRoutes } from './routes/editor';
 import { registerHealthRoutes } from './routes/health';
@@ -55,6 +56,7 @@ import { vapidSubject, type PushSender } from './webpush';
 import { Shop } from './shop';
 import { Social } from './social';
 import { Works } from './works';
+import { Personas } from './personas';
 
 export type Deps = {
   db: DB;
@@ -94,6 +96,8 @@ export type Deps = {
   schedule: Schedule;
   /** 浏览器推送：不开着网站也能在电脑、手机上收到通知（V0.8.0）。 */
   push: Push;
+  /** AI 大厅：玩家自己做的 AI 角色（V1.1.0）。 */
+  personas: Personas;
   /** 限制频率（防撞库、猜对局码、刷屏）。 */
   limiter: RateLimiter;
   /** 登录输错的次数（按账号 + 网络地址）。 */
@@ -433,6 +437,7 @@ export function createApp(options: AppOptions) {
     reviewer,
     schedule,
     push,
+    personas: new Personas(db, now),
     limiter,
     loginGuard: new LoginGuard(MAX_FAILED_LOGINS, LOCK_MINUTES * 60_000, now),
     now,
@@ -461,6 +466,7 @@ export function createApp(options: AppOptions) {
   registerScheduleRoutes(router, deps);
   registerPushRoutes(router, deps);
   registerAiSeatRoutes(router, deps);
+  registerPersonaRoutes(router, deps);
   registerHighlightRoutes(router, deps);
   registerEditorRoutes(router, deps);
   registerHealthRoutes(router, deps);
@@ -664,6 +670,8 @@ export function createApp(options: AppOptions) {
     push,
     /** 通知、好友（测试里直接调用 social.notify）。 */
     social,
+    /** AI 大厅（V1.1.0）。 */
+    personas: deps.personas,
     /** 开发模式下网页重新构建后，通知已打开的页面自动刷新。 */
     devReload() {
       for (const client of devReloadClients) client.write('event: reload\ndata: {}\n\n');

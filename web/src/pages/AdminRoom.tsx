@@ -3,16 +3,18 @@ import { api, errorMessage, PURPOSE_LABEL, type AdminLogEntry, type AdminRoomDet
 import { Stamp } from '../components/bits';
 import { formatDateTime, money, saveFile } from '../format';
 import { HostTools } from '../room/Host';
+import { MapPanel } from '../room/MapPanel';
 import { Link, navigate } from '../router';
 import { formatGameTime, RELATION_LABEL } from '../../../shared/game';
 import { STRESS_LABEL, WOUND_LABEL } from '../../../shared/rules';
 
 // 管理员看一局的全部后台数据：不用加入。这里的内容包括所有秘密，只有管理员看得到。
 
-type Tab = 'host' | 'people' | 'scenario' | 'log' | 'actions' | 'notes' | 'violations';
+type Tab = 'host' | 'people' | 'map' | 'scenario' | 'log' | 'actions' | 'notes' | 'violations';
 const TABS: { id: Tab; label: string }[] = [
   { id: 'host', label: '主持工具' },
   { id: 'people', label: '成员和角色' },
+  { id: 'map', label: '地图' },
   { id: 'scenario', label: '剧本和世界' },
   { id: 'log', label: '全部记录' },
   { id: 'actions', label: '行动和 AI 调用' },
@@ -210,6 +212,11 @@ export function AdminRoomPage({ id }: { id: number }) {
           </div>
         )}
         {current === 'people' && <People detail={detail} />}
+        {current === 'map' && (
+          <section className="section admin-map" aria-label="整张地图">
+            {detail.map ? <MapPanel view={detail.map} /> : <p className="muted">还没选剧本。</p>}
+          </section>
+        )}
         {current === 'scenario' && <ScenarioAndWorld detail={detail} />}
         {current === 'log' && <FullLog roomId={id} />}
         {current === 'actions' && <ActionsAndCalls detail={detail} />}
@@ -281,6 +288,7 @@ function People({ detail }: { detail: AdminRoomDetail }) {
                 <dt>位置</dt>
                 <dd>
                   {c.locationName ?? '—'}
+                  {c.locationName && c.spot && `·${c.spot}`}
                   <span className="muted">（去过：{c.visitedNames.join('、') || '—'}）</span>
                 </dd>
                 <dt>物品</dt>

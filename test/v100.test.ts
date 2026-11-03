@@ -588,7 +588,9 @@ function firstRun(dbPath: string, scenarios: string, port: number, input: string
 }
 
 test('删档（数据库第 23 版）：内测的账号（包括站长）、对局、公告、投稿、聊天和各种记录全清掉；网站的设置、限时活动、商城上架的商品留着；升级前先备份；记下清掉了多少；版本更新公告只发 V1.0.0 的', async () => {
-  assert.equal(MIGRATIONS.length, 23);
+  // 删档是第 23 版（V1.0.x 以后还有新的版本：站位是第 24 版）
+  assert.ok(MIGRATIONS.length >= 23);
+  assert.match(MIGRATIONS[22], /'beta_wipe'/);
   assert.equal(BEFORE_WIPE, 22);
   // 这个测试网站用了一阵子：再加点公告、大厅聊天、好友申请、商城上架的商品
   assert.equal((await as(admin)('POST', '/api/admin/announcements', { title: '内测公告', body: '感谢大家参加内测', audience: 'all' })).status, 201);
@@ -614,15 +616,31 @@ test('删档（数据库第 23 版）：内测的账号（包括站长）、对�
     const users = count(raw, 'users');
     const guests = (raw.prepare('SELECT COUNT(*) AS n FROM users WHERE is_guest = 1').get() as { n: number }).n;
     assert.ok(guests > 0, '有游客');
+    // 退回第 22 版：第 24 版（站位）、第 25 版（V1.1.0 AI 大厅）加的先去掉，升级时会再加上
+    // （ai_seats.persona_id 带着外键，不能直接去掉这一列：照第 22 版的样子重建这张表）
+    raw.exec('ALTER TABLE characters DROP COLUMN spot');
+    raw.exec(`DROP INDEX ai_seats_persona;
+      CREATE TABLE ai_seats_v22 (
+        room_id INTEGER NOT NULL REFERENCES rooms(id) ON DELETE CASCADE,
+        role_key TEXT NOT NULL,
+        name TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        PRIMARY KEY (room_id, role_key)
+      );
+      INSERT INTO ai_seats_v22 SELECT room_id, role_key, name, created_at FROM ai_seats;
+      DROP TABLE ai_seats;
+      ALTER TABLE ai_seats_v22 RENAME TO ai_seats;
+      DROP TABLE ai_persona_invites;
+      DROP TABLE ai_personas;`);
     raw.exec('UPDATE schema_version SET version = 22');
     raw.close();
 
     const backups: [string, number, number][] = [];
     const db = openDatabase(file, { onBackup: (f, from, to) => backups.push([f, from, to]) });
     try {
-      assert.equal(schemaVersion(db), 23);
+      assert.equal(schemaVersion(db), MIGRATIONS.length);
       assert.equal(backups.length, 1, '升级前先备份');
-      assert.deepEqual(backups[0].slice(1), [22, 23]);
+      assert.deepEqual(backups[0].slice(1), [22, MIGRATIONS.length]);
       const backup = new DatabaseSync(backups[0][0], { readOnly: true });
       assert.equal(count(backup, 'users'), users, '备份里是删档前的数据');
       backup.close();
@@ -781,7 +799,7 @@ test('删档以后第一次运行（npm run reset -- --first-run）：先升级�
     // 问到一半输入断了：删档已经做了（升级时），站长没建；下次还会问
     let r = await firstRun(dbPath, scenarios, port, 'newboss\n');
     assert.equal(r.code, 1, r.out);
-    assert.match(r.out, /数据库要从第 22 版升级到第 23 版，升级前先备份了一份/);
+    assert.match(r.out, new RegExp(`数据库要从第 22 版升级到第 ${MIGRATIONS.length} 版，升级前先备份了一份`));
     assert.ok(r.out.includes(`V1.0.0 正式版：内测的数据已经清空了（${countsText(counts)}`), r.out);
     assert.match(r.out, /投稿通过的剧本文件挪进了/);
     assert.match(r.out, /网站里还没有账号，先建你的站长账号/);

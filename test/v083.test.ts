@@ -113,7 +113,7 @@ test('SKILL.md：名字和描述写在开头，版本号换成了现在的，格
   const fields = [
     ...['format', 'rules', 'title', 'category', 'intro', 'author', 'genre', 'tone', 'players', 'expectedDays', 'relation', 'stress', 'start', 'safety'],
     ...['opening', 'background', 'situation', 'known', 'roles', 'public', 'secret', 'goal', 'startLocation', 'attributes', 'specialties', 'appearance'],
-    ...['locations', 'exits', 'minutes', 'features', 'truth', 'summary', 'points', 'clues', 'content', 'location', 'how', 'check', 'modifier', 'core'],
+    ...['locations', 'exits', 'minutes', 'hidden', 'x', 'y', 'features', 'truth', 'summary', 'points', 'clues', 'content', 'location', 'how', 'check', 'modifier', 'core'],
     ...['npcs', 'identity', 'personality', 'knows', 'wants', 'speech', 'attitude', 'timeline', 'ifIgnored', 'endings', 'condition', 'result'],
     ...['enemies', 'tier', 'abilities', 'tweak', 'dungeon', 'level', 'size', 'exit', 'encounters', 'trigger', 'loot', 'reward', 'variants', 'boss', 'weaknesses', 'hint', 'shield'],
     ...ATTRIBUTE2_KEYS,

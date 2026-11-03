@@ -6,6 +6,7 @@ import { ABILITIES, ABILITY_NAME, SKILL_ABILITY, SKILL_KEYS, SKILL_NAME } from '
 import { ITEM_INDEX } from '../../../shared/5e/item-index';
 import { MONSTER_INDEX } from '../../../shared/5e/monster-index';
 import { CR_LABEL } from '../../../shared/5e/types';
+import { SPOT_FLAG_LABEL, SPOT_FLAGS, SPOTS_MAX } from '../../../shared/spots';
 import { sign } from '../format';
 import {
   checkAttributes,
@@ -30,6 +31,7 @@ import {
   type Path,
   type RoleMode,
 } from './doc';
+import { MapEditor } from './MapEditor';
 import {
   BadShape,
   CheckField,
@@ -43,6 +45,7 @@ import {
   SelectInput,
   StringListField,
   TextField,
+  TextInput,
   TimeField,
   useOps,
   type Option,
@@ -236,14 +239,17 @@ function Specialties({ path, value }: { path: Path; value: unknown }) {
 export function LocationsSection({ doc, locations }: { doc: Obj; locations: Option[] }) {
   const ops = useOps();
   return (
-    <ItemList
+    <>
+      <MapEditor doc={doc} />
+      <ItemList
       path={['locations']}
       value={doc.locations}
       what="地点"
       addLabel="添加地点"
       onAdd={() => ops.replace((d) => setIn(d, ['locations'], listAdd(d.locations, newLocation(d))) as Obj)}
       render={(item, index, count) => <LocationItem item={item} index={index} count={count} locations={locations} />}
-    />
+      />
+    </>
   );
 }
 
@@ -257,6 +263,7 @@ const LocationItem = memo(function LocationItem({ item, index, count, locations 
       </div>
       <TextField path={[...path, 'description']} value={item.description} label="描述" rows={4} />
       <Exits path={[...path, 'exits']} value={item.exits} self={item.key} locations={locations} />
+      <Spots path={path} item={item} />
       <StringListField path={[...path, 'features']} value={item.features} label="可以调查的" rows={1} />
     </ItemCard>
   );
@@ -286,6 +293,10 @@ function Exits({ path, value, self, locations }: { path: Path; value: unknown; s
               <NumberInput path={[...path, i, 'minutes']} value={e.minutes} min={1} max={1440} label={`出口 ${i + 1} 路上要几分钟`} />
               <span aria-hidden="true">分钟</span>
             </span>
+            <label className="choice ed-hidden-exit">
+              <input type="checkbox" checked={e.hidden === true} onChange={(ev) => ops.set([...path, i, 'hidden'], ev.target.checked ? true : undefined)} />
+              <span>暗门</span>
+            </label>
             <RowTools path={path} index={i} count={list.length} />
           </div>
         );
@@ -293,6 +304,51 @@ function Exits({ path, value, self, locations }: { path: Path; value: unknown; s
       <button type="button" className="btn btn-small btn-quiet ed-add" onClick={add}>
         添加出口
       </button>
+    </fieldset>
+  );
+}
+
+/** 站位（V1.0.x）：地点里的几个位置和属性（嘈杂、昏暗、掩体）；整个地点也可以嘈杂、昏暗。属性只写 true，不勾就去掉。 */
+function Spots({ path, item }: { path: Path; item: Obj }) {
+  const ops = useOps();
+  const listPath = [...path, 'spots'];
+  const id = fieldId(listPath);
+  if (item.spots !== undefined && !Array.isArray(item.spots)) return <BadShape id={id} what="站位" />;
+  const list: unknown[] = item.spots ?? [];
+  const flag = (at: Path, on: boolean) => ops.set(at, on ? true : undefined);
+  return (
+    <fieldset className="field ed-field ed-exits ed-spots" id={id}>
+      <legend>站位</legend>
+      <div className="ed-spot-place">
+        {(['noisy', 'dark'] as const).map((f) => (
+          <label key={f} className="choice">
+            <input type="checkbox" checked={item[f] === true} onChange={(ev) => flag([...path, f], ev.target.checked)} />
+            <span>整个地方{SPOT_FLAG_LABEL[f]}</span>
+          </label>
+        ))}
+      </div>
+      {list.map((spot, i) => {
+        const o = isObj(spot) ? spot : {};
+        return (
+          <div key={i} className="ed-exit ed-spot" id={fieldId([...listPath, i])}>
+            <TextInput path={[...listPath, i, 'name']} value={o.name} label={`站位 ${i + 1} 的名字`} />
+            <span className="ed-spot-flags">
+              {SPOT_FLAGS.map((f) => (
+                <label key={f} className="choice">
+                  <input type="checkbox" checked={o[f] === true} onChange={(ev) => flag([...listPath, i, f], ev.target.checked)} />
+                  <span>{SPOT_FLAG_LABEL[f]}</span>
+                </label>
+              ))}
+            </span>
+            <RowTools path={listPath} index={i} count={list.length} />
+          </div>
+        );
+      })}
+      {list.length < SPOTS_MAX && (
+        <button type="button" className="btn btn-small btn-quiet ed-add" onClick={() => ops.edit(listPath, (old) => listAdd(old, { name: '' }))}>
+          添加站位
+        </button>
+      )}
     </fieldset>
   );
 }

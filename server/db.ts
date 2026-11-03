@@ -1467,6 +1467,40 @@ export const MIGRATIONS: string[] = [
   DELETE FROM signups;
   DELETE FROM violations;
   `,
+  // 24（V1.0.x 站位）：角色在一个地点里站在哪（剧本里这个地点的站位，或者主持人起的短名字）；没特别站在哪、和大家在一起是 NULL。
+  // 换地点时清空。只在主持人结算时改（和位置一样随结算写回）
+  `
+  ALTER TABLE characters ADD COLUMN spot TEXT;
+  `,
+  // 25（V1.1.0 AI 大厅）：玩家自己做的 AI 角色（名字、简介、人设）。public：放进 AI 大厅（谁都看得到人设、能邀请）；
+  // 不公开的只有作者自己能请进对局。编号不重复使用（AUTOINCREMENT：删掉以后新做的不会拿到同一个编号，按旧的举报下架不会删错）。
+  // invites：请它进过对局（开了局）的不同房主有几个，作者自己不算（大厅按它排）；ai_persona_invites 记着谁请过。
+  // 交给 AI 演的身份可以请一个 AI 角色来演：persona 是请进来那一刻的样子（JSON：名字、简介、人设、作者），之后作者改了、删了，这一局照旧；
+  // persona_id 是大厅里的那个（删掉了就空着）。没有 persona 的照旧是主持人顺带演
+  `
+  CREATE TABLE ai_personas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    intro TEXT NOT NULL DEFAULT '',
+    prompt TEXT NOT NULL,
+    public INTEGER NOT NULL DEFAULT 0,
+    invites INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  );
+  CREATE INDEX ai_personas_user ON ai_personas(user_id);
+  CREATE INDEX ai_personas_hall ON ai_personas(public, invites);
+  CREATE TABLE ai_persona_invites (
+    persona_id INTEGER NOT NULL REFERENCES ai_personas(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at INTEGER NOT NULL,
+    PRIMARY KEY (persona_id, user_id)
+  );
+  ALTER TABLE ai_seats ADD COLUMN persona_id INTEGER REFERENCES ai_personas(id) ON DELETE SET NULL;
+  ALTER TABLE ai_seats ADD COLUMN persona TEXT;
+  CREATE INDEX ai_seats_persona ON ai_seats(persona_id);
+  `,
 ];
 
 /** 数据是更新的版本留下的（数据库的版本比这个程序认识的新）：打开会弄坏数据，不打开。 */

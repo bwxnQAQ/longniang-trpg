@@ -62,6 +62,10 @@ export function TopBar() {
             <Link to="/modules" aria-current={current('/modules')}>
               模组
             </Link>
+            {/* AI 大厅（V1.1.0）：大家做的 AI 角色 */}
+            <Link to="/ai-hall" aria-current={current('/ai-hall')}>
+              AI 大厅
+            </Link>
             <Link to="/rooms" aria-current={current('/rooms')}>
               我的对局
             </Link>

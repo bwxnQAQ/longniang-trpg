@@ -21,6 +21,8 @@ export const SCENARIO_WRITER_SYSTEM = `你是「龙娘跑团」的剧本作者�
 - 三线索原则：每条真相要点至少有 3 条线索指向它，分散在不同的地点、用不同的办法拿到（搜查、问人、跟踪、检定），错过一条也不会卡住。线索的 content 是玩家拿到时直接看到的文字，要具体。
 - 关键线索（core 为 true）是推进剧情必须拿到的。每条关键线索所在的地点，都要从某个身份的起点走得到。
 - 地点 5～10 个，用出口连起来。出口两边都写（能去也能回），写清楚路上要几分钟。features 写这里有什么可以调查。
+- 地图：每个地点写 x、y（0～100 的整数，x 西小东大，y 北小南大），照地点之间的方位和路程摆：相连的、路近的挨得近，路远的离得远，任意两个地点至少隔开 10。暗门、暗道这种要先发现才知道的路，出口写 hidden: true（只能从一边推开的，那一边写普通出口）；别的出口 hidden 写 false。
+- 站位：人多、能遮挡、会交手的地点写 2～6 个 spots（短名字：柜台、壁炉边、二楼栏杆），说话、干活声音大的 noisy 写 true，灯照不到的 dark 写 true，有墙、柱子、货堆挡着的 cover 写 true，别的写 false；整个地方都吵、都黑的，地点的 noisy、dark 写 true。同一个站位的才是身边的人：悄悄话只能说给身边的人，悄悄做时身边的人容易察觉，近战只打得到同一个站位上的。只是路过的小地方 spots 写空列表。
 - NPC 3～8 个：每人有自己的目的，会撒谎、隐瞒、讨价还价；knows 一条一句写清楚他知道什么。反派会主动行动。
 - 时间线 4～8 条：玩家不管的话，世界会怎么变化；ifIgnored 写没人管的后果。按时间先后排，都在开场之后，大致落在预计的天数里。
 - 结局 2～4 个：condition 写成玩家做到什么就能达成，至少一个好结局、一个坏结局。
@@ -211,8 +213,24 @@ export const SCENARIO_SCHEMA = obj({
       key: key('地点'),
       name: str('最多20字'),
       description: str('最多600字'),
-      exits: list(obj({ to: str('目的地的 key'), minutes: int('路上要几分钟（游戏时间），1～1440') }), '能去哪里，最多12条'),
+      exits: list(
+        obj({ to: str('目的地的 key'), minutes: int('路上要几分钟（游戏时间），1～1440'), hidden: { type: 'boolean', description: '暗门、暗道：发现了才知道、才走得通；普通的路写 false' } }),
+        '能去哪里，最多12条',
+      ),
       features: strList('这里有什么可以调查，每条最多200字'),
+      x: int('在地图上的横坐标，0～100，西小东大'),
+      y: int('在地图上的纵坐标，0～100，北小南大'),
+      spots: list(
+        obj({
+          name: str('站位名，最多12字，同一个地点里不重复'),
+          noisy: { type: 'boolean', description: '嘈杂：说话、动静被盖住' },
+          dark: { type: 'boolean', description: '昏暗：看不清' },
+          cover: { type: 'boolean', description: '掩体：有东西挡着，远程不好打' },
+        }),
+        '站位：这个地点里的几个位置，最多8个；用不上的写空列表',
+      ),
+      noisy: { type: 'boolean', description: '整个地点嘈杂' },
+      dark: { type: 'boolean', description: '整个地点昏暗' },
     }),
     '5～10个地点',
   ),

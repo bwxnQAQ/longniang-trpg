@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { GUARD_MARK, type GuardVerdict } from './moderation';
 import { GUIDE_MARK } from '../../shared/guide';
-import { REVIEW_MARK, REVIEW_SUBMISSION_MARK } from './marks';
+import { PERSONA_MARK, REVIEW_MARK, REVIEW_SUBMISSION_MARK } from './marks';
 import type { AiProvider, MessagesRequest, MessagesResponse, ResponseBlock, SendHooks, StopReason, TextBlock, ToolResultBlock } from './types';
 
 // 测试用的假主持人：不联网、不花钱。自动测试用它模拟各种回复；
@@ -134,6 +134,37 @@ function actionText(context: string): string {
 
 const SEARCH_WORDS = /搜|查|找|看|检查|翻|观察|调查/;
 
+/**
+ * 地图（V1.0.x）验收用：「测试赶路」走的时候赶路（路上的时间减半）、「测试动静」弄出附近听得到的动静、
+ * 「测试暗道」发现这里的第一条暗道。
+ */
+export const FAKE_HURRY_WORD = '测试赶路';
+export const FAKE_NOISE_WORD = '测试动静';
+export const FAKE_SECRET_WORD = '测试暗道';
+/** 站位（V1.0.x）验收用：「测试站位」站到这个地点剧本写的第一个站位（没写的站到「窗边」）。 */
+export const FAKE_SPOT_WORD = '测试站位';
+
+/** 估时的内容里「从这里到各处的路程」那一行：地点名字 → 分钟。 */
+function routeTable(context: string): Map<string, number> {
+  const line = context.match(/从这里到各处的路程：([^\n]*)/)?.[1] ?? '';
+  const out = new Map<string, number>();
+  for (const part of line.split('；')) {
+    const m = part.trim().match(/^(.+?) (\d.*)$/);
+    if (!m) continue;
+    const num = (unit: string) => Number(m[2].match(new RegExp(`(\\d+) ${unit}`))?.[1] ?? 0);
+    out.set(m[1], num('天') * 1440 + num('小时') * 60 + num('分钟'));
+  }
+  return out;
+}
+
+/** 假的估时：要去的地方按路程算（赶路减半），睡觉八小时，搜查半小时，别的十分钟。 */
+function fakeMinutes(action: string, context: string): number {
+  for (const [name, minutes] of routeTable(context)) {
+    if (action.includes(name)) return (action.includes(FAKE_HURRY_WORD) ? Math.ceil(minutes / 2) : minutes) + 5;
+  }
+  return /睡/.test(action) ? 480 : /去|走|前往/.test(action) ? 15 : SEARCH_WORDS.test(action) ? 30 : 10;
+}
+
 /** 假的“生成剧本”：大纲和完整剧本都拿《雾港旅店》改个名字，流程能走通就行。 */
 function demoScenario(request: MessagesRequest): MessagesResponse {
   let base: Record<string, any>;
@@ -198,8 +229,24 @@ function demoReview(request: MessagesRequest): MessagesResponse {
   );
 }
 
+/**
+ * 假的 AI 角色交行动（V1.1.0 AI 大厅）：写一句看得出是假的、带着它名字的行动。人设里写了「测试拒绝」的，假装被安全机制拒绝；
+ * 写了「测试不交」的，回一段读不出行动的话（验交不出来的时候照样结算）。
+ */
+function demoPersonaAct(request: MessagesRequest): MessagesResponse {
+  const text = lastUserText(request);
+  const persona = text.match(/<<<\n([\s\S]*?)\n>>>/)?.[1] ?? '';
+  if (persona.includes(FAKE_REFUSAL_WORD)) return refused();
+  if (persona.includes('测试不交')) return say('{}');
+  const name = text.match(/^名字：(.+)$/m)?.[1]?.trim() ?? 'AI 角色';
+  const first = text.slice(text.indexOf('# 这一轮')).match(/^(.+?)这一轮要做：/m)?.[1] ?? '';
+  return say(JSON.stringify({ action: `（测试用的假 AI 角色）${name}${first ? `跟着${first}，看看能帮上什么忙` : '在四周看了看'}。` }));
+}
+
 /** 估时、结算、场外问答都给一个看得出是“假的”的固定套路回复。 */
 export function demoHandler(request: MessagesRequest): MessagesResponse {
+  // AI 角色交行动（V1.1.0）
+  if (request.system?.[0]?.text.startsWith(PERSONA_MARK)) return demoPersonaAct(request);
   // AI 审核（V0.6.0）：写了「测试违规」的投稿建议退回、举报判违规，别的建议通过、判不违规
   if (request.system?.[0]?.text.startsWith(REVIEW_MARK)) return demoReview(request);
   // 生成剧本、转换剧本
@@ -210,7 +257,7 @@ export function demoHandler(request: MessagesRequest): MessagesResponse {
   // 估算耗时
   if (request.output_config?.format) {
     const action = actionText(lastUserText(request));
-    const minutes = /睡/.test(action) ? 480 : /去|走|前往/.test(action) ? 15 : SEARCH_WORDS.test(action) ? 30 : 10;
+    const minutes = fakeMinutes(action, lastUserText(request));
     // 以问号结尾的当成场外提问（测试合并的输入框用；真的 Claude 会按意思判断）
     const kind = /[?？]$/.test(action.trim()) ? 'question' : 'action';
     return say(JSON.stringify({ minutes, reason: '测试用的假估时', kind }));
@@ -285,10 +332,24 @@ export function demoHandler(request: MessagesRequest): MessagesResponse {
     const who = context.slice(context.indexOf('# 这次要结算的行动')).match(/角色：([^（\n]+)（编号/)?.[1]?.trim() || '角色';
     const parts = ['（这是测试用的假主持人，没有调用 AI。）', `${who}${action ? `试着「${action}」` : '行动了'}。`];
     if (moved) parts.push(`${who}来到了${String(moved.location)}。`);
+    // 地图（V1.0.x）：时间不够只走到半路、发现暗道、远处听得到的动静
+    const halfway = results.find((r) => r.arrived === false);
+    if (halfway) parts.push(`${who}走到${String(halfway.stopped_at ?? halfway.location)}，离${String(halfway.destination ?? '要去的地方')}还有一段路。`);
+    if (results.some((r) => typeof r.passage === 'string')) parts.push(`${who}发现了一条暗道。`);
+    const stood = results.find((r) => typeof r.spot === 'string' && Array.isArray(r.beside));
+    if (stood) parts.push(`${who}站到了${String(stood.spot)}。`);
+    if (results.some((r) => Array.isArray(r.heard_by) && r.heard_by.length)) parts.push('附近的人也听到了动静。');
     if (roll && typeof roll.pet_help === 'string') parts.push(`${String(roll.pet_help).split('（')[0]}扑上去帮了一把。`);
     if (roll) parts.push(`结果是「${String(roll.outcome_label)}」：${String(roll.meaning ?? '')}。`);
     if (check5e) parts.push(check5e.success === false ? '可惜没成。' : '这一下成了。');
     if (clue) parts.push(`${who}发现了「${String(clue.clue)}」。`);
+    // AI 角色（V1.1.0）一起交的行动：叙述里带一句
+    const acts = context.includes('# AI 队友这一轮的行动') ? context.slice(context.indexOf('# AI 队友这一轮的行动')).split('\n').slice(1) : [];
+    for (const line of acts) {
+      const m = line.match(/^(.+?)（[a-z][a-z0-9-]*）：「/);
+      if (!m) break;
+      parts.push(`${m[1]}也一起行动了。`);
+    }
     // 规则第二版（V0.7.0）：开打、攻击、还手、受伤、宝物、奇遇
     for (const r of results) {
       if (Array.isArray(r.enemies) && Array.isArray(r.order)) parts.push('敌人扑了上来。');
@@ -314,7 +375,7 @@ export function demoHandler(request: MessagesRequest): MessagesResponse {
   const actorId = Number(block.match(/编号 (\d+)/)?.[1] ?? 0);
   const here = block.match(/现在在 [^（\n]*（([a-z][a-z0-9-]*)）/)?.[1] ?? null;
   let scenario: {
-    locations?: { key: string; name: string }[];
+    locations?: FakeLocation[];
     clues?: { key: string; title: string; location: string }[];
     endings?: { key: string }[];
     enemies?: { key: string; tier: string }[];
@@ -336,7 +397,8 @@ export function demoHandler(request: MessagesRequest): MessagesResponse {
   // 「测试还手」第一个敌人打行动的人、「测试受伤」受轻伤、「测试宝物」拿这里的宝物、「测试技能」用会的第一门技能、「测试结束战斗」、
   // 「测试喝药」喝一瓶治疗药水（带进来的先用，没有就用这一局捡到的）
   const fight = context.slice(context.indexOf('## 正在打的仗'));
-  const enemyIds = context.includes('## 正在打的仗') ? [...fight.matchAll(/\n {2}- ([a-z][a-z0-9-]*-\d+) [^：\n]*：生命/g)].map((m) => m[1]) : [];
+  // 敌人那一行：「  - rat-1 大老鼠（小怪）：站在大家中间；生命 6/6……」（V1.0.x 起写着站在哪）
+  const enemyIds = context.includes('## 正在打的仗') ? [...fight.matchAll(/\n {2}- ([a-z][a-z0-9-]*-\d+) [^：\n]*：(?:站在[^；、\n]*[；、])?生命/g)].map((m) => m[1]) : [];
   const enemyList = scenario.dungeon?.enemies ?? scenario.enemies ?? [];
   if (action.includes('测试开打')) {
     const enc = scenario.dungeon?.encounters?.find((e) => e.at === here);
@@ -355,9 +417,10 @@ export function demoHandler(request: MessagesRequest): MessagesResponse {
   if (action.includes('测试技能') && skill) calls.push({ name: 'use_skill', input: { character: actorId, skill, target_enemy: enemyIds[0], reason: '测试用的技能' } });
   if (action.includes('测试结束战斗')) calls.push({ name: 'end_combat', input: { note: '测试用的结束' } });
   if (action.includes('测试喝药')) calls.push({ name: 'use_item', input: { character: actorId, item: 'potion' } });
+  calls.push(...mapCalls(action, actorId, here, scenario.locations));
   if (!calls.length) calls.push({ name: 'roll_check', input: { character: actorId, attribute: 'perception', modifier: 0, reason: '测试用的检定' } });
   const target = scenario.locations?.find((l) => l.key !== here && action.includes(l.name));
-  if (target) calls.push({ name: 'move_character', input: { character: actorId, location: target.key } });
+  if (target) calls.push({ name: 'move_character', input: { character: actorId, location: target.key, ...(action.includes(FAKE_HURRY_WORD) ? { hurry: true } : {}) } });
   const at = target?.key ?? here;
   if (SEARCH_WORDS.test(action)) {
     const clue = scenario.clues?.find((c) => c.location === at && !known.includes(c.title));
@@ -370,6 +433,27 @@ export function demoHandler(request: MessagesRequest): MessagesResponse {
   return useTools(...calls);
 }
 
+type FakeLocation = { key: string; name: string; exits?: { to: string; minutes: number; hidden?: boolean }[]; spots?: { name: string }[] };
+
+/** 地图（V1.0.x）验收用的几个词：「测试动静」「测试暗道」。 */
+function mapCalls(action: string, actorId: number, here: string | null, locations: FakeLocation[] = []): { name: string; input: unknown }[] {
+  const calls: { name: string; input: unknown }[] = [];
+  if (action.includes(FAKE_NOISE_WORD)) calls.push({ name: 'noise', input: { text: '远处传来一声闷响，像是有什么重东西倒了。', reach_minutes: 15 } });
+  if (action.includes(FAKE_SECRET_WORD) && here) {
+    const from = locations.find((l) => l.key === here)?.exits?.find((e) => e.hidden);
+    const into = locations.find((l) => l.exits?.some((e) => e.to === here && e.hidden));
+    const other = from?.to ?? into?.key;
+    if (other) calls.push({ name: 'reveal_exit', input: { from: here, to: other, characters: [actorId] } });
+  }
+  if (action.includes(FAKE_SPOT_WORD)) {
+    // 「测试站位：壁炉边」站到写的地方；没写就站到这个地点的第一个站位（没有就是窗边）
+    const named = action.match(new RegExp(`${FAKE_SPOT_WORD}[：:]\\s*([^\\s，。,.]+)`))?.[1];
+    const spot = named ?? locations.find((l) => l.key === here)?.spots?.[0]?.name ?? '窗边';
+    calls.push({ name: 'set_spot', input: { character: actorId, spot } });
+  }
+  return calls;
+}
+
 /**
  * 5E 模组（V0.9.0）的假主持人：默认做一次察觉检定；验收用的几个词：「测试开打」放出剧本的第一种怪物、「测试攻击」用身上第一件武器
  * 打这里第一个没倒下的怪物、「测试还手」第一个怪物用它的第一个动作打行动的人、「测试受伤」受 1d6 挥砍伤害、「测试施法」施放第一个戏法、
@@ -380,7 +464,7 @@ function demo5e(
   c: { action: string; actorId: number; here: string | null; actorBlock: string; known: string[]; context: string },
 ): MessagesResponse {
   let scenario: {
-    locations?: { key: string; name: string }[];
+    locations?: FakeLocation[];
     clues?: { key: string; title: string; location: string }[];
     endings?: { key: string }[];
     monsters?: { key: string }[];
@@ -396,7 +480,7 @@ function demo5e(
   }
   const { action, actorId, here, actorBlock, known, context } = c;
   const fight = context.includes('## 正在打的仗') ? context.slice(context.indexOf('## 正在打的仗')) : '';
-  const enemyIds = [...fight.matchAll(/\n {2}- ([a-z][a-z0-9-]*-\d+) [^：\n]*：生命/g)].map((m) => m[1]);
+  const enemyIds = [...fight.matchAll(/\n {2}- ([a-z][a-z0-9-]*-\d+) [^：\n]*：(?:站在[^；、\n]*[；、])?生命/g)].map((m) => m[1]);
   const weapon = actorBlock.match(/攻击（attack 的 weapon 填括号里的）：[^（\n]*（([a-z0-9+-]+)）/)?.[1];
   const cantrip = actorBlock.match(/戏法（随意施放）：[^（\n]*（([a-z0-9-]+)/)?.[1];
   const calls: { name: string; input: unknown }[] = [];
@@ -412,9 +496,10 @@ function demo5e(
   }
   if (action.includes('测试休息')) calls.push({ name: 'rest', input: { kind: 'short', reason: '测试用的休息' } });
   if (action.includes('测试结束战斗')) calls.push({ name: 'end_combat', input: { note: '测试用的结束' } });
+  calls.push(...mapCalls(action, actorId, here, scenario.locations));
   if (!calls.length) calls.push({ name: 'check', input: { character: actorId, skill: 'perception', dc: 10, reason: '测试用的检定' } });
   const target = scenario.locations?.find((l) => l.key !== here && action.includes(l.name));
-  if (target) calls.push({ name: 'move_character', input: { character: actorId, location: target.key } });
+  if (target) calls.push({ name: 'move_character', input: { character: actorId, location: target.key, ...(action.includes(FAKE_HURRY_WORD) ? { hurry: true } : {}) } });
   const at = target?.key ?? here;
   if (SEARCH_WORDS.test(action)) {
     const clue = scenario.clues?.find((x) => x.location === at && !known.includes(x.title));

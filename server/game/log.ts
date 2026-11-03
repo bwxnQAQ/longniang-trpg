@@ -5,9 +5,13 @@ import type { LogData, RollCard } from '../../shared/game';
 
 export type LogKind = 'narration' | 'ooc' | 'system';
 
-/** 存在数据库里的附加数据。和发给网页的 LogData 基本一样，只是线索和状态变化还带着“给谁看”。 */
+/**
+ * 存在数据库里的附加数据。和发给网页的 LogData 基本一样，只是线索和状态变化还带着“给谁看”。
+ * seenBy（V1.1.0 AI 大厅）：在场看到、听到的 AI 角色（交给它的身份的 key）。它交行动时只看得到这些（自己的角色知道的事）。不发给网页。
+ */
 export type StoredLogData =
-  | Exclude<LogData, { type: 'resolution' }>
+  | Exclude<LogData, { type: 'resolution' } | { type: 'say' }>
+  | { type: 'say'; speaker: string; to: string | null; seenBy?: string[] }
   | {
       type: 'resolution';
       actor: string;
@@ -23,6 +27,9 @@ export type StoredLogData =
       events?: string[];
       /** 这次用掉的、从账号背包里扣了的道具（V0.7.0）：房主撤回这次结算时退回去。不发给网页。 */
       itemUses?: { characterId: number; item: string }[];
+      /** 和这个行动一起结算的 AI 角色的行动（V1.1.0）。 */
+      companions?: { name: string; action: string }[];
+      seenBy?: string[];
     };
 
 export type LogRow = {
@@ -144,12 +151,15 @@ export function toLogEntry(row: LogRow, viewerCharacterId: number | null): LogEn
     try {
       const stored = JSON.parse(row.data) as StoredLogData;
       if (stored.type === 'resolution') {
-        const { itemUses: _itemUses, ...shown } = stored;
+        const { itemUses: _itemUses, seenBy: _seenBy, ...shown } = stored;
         data = {
           ...shown,
           clues: shown.clues.filter((c) => viewerCharacterId !== null && c.to.includes(viewerCharacterId)).map(({ key, title }) => ({ key, title })),
           changes: shown.changes.filter((c) => c.characterId === viewerCharacterId).map((c) => c.text),
         };
+      } else if (stored.type === 'say') {
+        const { seenBy: _seenBy, ...shown } = stored;
+        data = shown;
       } else {
         data = stored;
       }

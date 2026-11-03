@@ -8,7 +8,7 @@ import { HttpError } from '../http';
 import type { RealtimeHub } from '../realtime';
 import type { Rooms } from '../routes/rooms';
 import type { Safety } from '../safety';
-import { parseStyle, type Catchup, type CatchupItem, type GameState, type MyAction, type PetCompanion, type PlaceInfo, type RoomStyle, type RoomTodo, type ScenarioSummary } from '../../shared/game';
+import { parseStyle, type Catchup, type CatchupItem, type GameState, type MyAction, type PetCompanion, type PlaceInfo, type RoomStyle, type RoomTodo, type ScenarioSummary, type StyleLanguage } from '../../shared/game';
 import { petGrowth } from '../pets';
 import type { Cards } from '../cards';
 import type { Cards5e } from '../cards5e';
@@ -21,6 +21,9 @@ import { character5eView, class5eLine, fight5eView } from './view5e';
 import { answerQuestion, estimateMinutes, runDm, summarizeCatchup, summarizeStory } from './dm';
 import { characterIdOf, insertLog, LOG_SELECT, LOG_VISIBLE, toLogEntry, type LogEntryView, type LogRow, type StoredLogData } from './log';
 import { buildDmContext, type RecentEntry } from './prompts';
+import { knownRoutesText, mapViewOf } from './map-view';
+import { pathKey } from '../../shared/map';
+import { placeSpots, sameSpot, spotFlags, spotName } from '../../shared/spots';
 import { secureRng, type Rng } from './rules';
 import { newV2State, type V2State } from './rules2';
 import { gameMinutes, rollDungeonRun, validateScenario, type Role, type Scenario } from './scenario';
@@ -36,21 +39,28 @@ import { defenseOf } from './rules2';
 import {
   aiSeatNamed,
   clearAiSeats,
+  COMPANION_ATTITUDE,
+  companionAt,
   companionsOf,
   companionsStartText,
   dropAiSeat,
   isAiSeat,
   loadAiSeats,
   loadPlayScenario,
+  personasAt,
   rememberFormerName,
   roomCompanions,
   takeoverOf,
   takeoverText,
+  type CompanionInfo,
+  type PlayScenario,
 } from './companions';
+import { PERSONA_SEEN_MAX, runPersonaAct, type PersonaActView, type SeenEntry } from './persona-act';
 import { rejectInvisibleName } from '../util';
 import {
   characterOfUser,
   emptyWorld,
+  exitsKnownTo,
   foundClues,
   loadCharacters,
   loadOriginalScenario,
@@ -62,6 +72,7 @@ import {
   type Character,
   type RoomRow,
   type RoomStatus,
+  type World,
 } from './world';
 
 // 游戏引擎：开局、行动、计时、回合、AI结算，都在这里。
@@ -114,6 +125,8 @@ type NarrationRow = { id: number; text: string; data: string | null; game_time: 
 const DEFAULT_MINUTES = 30;
 /** 估时最多等这么久（V0.9.1）：等不到就按 DEFAULT_MINUTES 算，不让行动一直干等（以前要等到请求本身超时，五分钟）。 */
 const ESTIMATE_TIMEOUT_MS = 90_000;
+/** AI 角色交行动最多等这么久（V1.1.0）：等不到这一轮它就不交了（主持人照旧顺带演），不耽误结算。 */
+const PERSONA_ACT_TIMEOUT_MS = 60_000;
 /** AI结算失败后（网络、限流等）自动重试的次数和间隔（现实分钟）。 */
 const MAX_ATTEMPTS = 3;
 const RETRY_MINUTES = [1, 5, 15];
@@ -214,6 +227,8 @@ export class GameEngine {
   start() {
     this.startedAt = this.now();
     this.fillBuiltinRoleSheets();
+    this.fillBuiltinMapPositions();
+    this.fillBuiltinSpots();
     // 上次关服务器时正在结算的行动，放回去重新结算（结算是一次性写入的，不会只写了一半）
     this.db.prepare("UPDATE actions SET status = 'waiting' WHERE status = 'resolving'").run();
     for (const r of this.db.prepare("SELECT id FROM rooms WHERE status = 'running'").all() as { id: number }[]) this.syncRoom(r.id);
@@ -711,7 +726,7 @@ export class GameEngine {
     const rows = this.db
       .prepare(
         `SELECT l.id, l.text, l.data, l.game_time FROM log_entries l
-         WHERE l.room_id = ? AND l.kind = 'narration' AND json_extract(l.data, '$.type') IN ('resolution', 'private', 'say', 'give') AND ${LOG_VISIBLE}
+         WHERE l.room_id = ? AND l.kind = 'narration' AND json_extract(l.data, '$.type') IN ('resolution', 'private', 'say', 'give', 'aside') AND ${LOG_VISIBLE}
          ORDER BY l.id DESC LIMIT ?`,
       )
       .all(roomId, viewer.userId, viewer.characterId, limit) as NarrationRow[];
@@ -727,7 +742,7 @@ export class GameEngine {
     const rows = this.db
       .prepare(
         `SELECT l.id, l.text, l.data, l.game_time FROM log_entries l
-         WHERE l.room_id = ? AND l.id > ? AND l.kind = 'narration' AND json_extract(l.data, '$.type') IN ('resolution', 'private', 'say', 'give')
+         WHERE l.room_id = ? AND l.id > ? AND l.kind = 'narration' AND json_extract(l.data, '$.type') IN ('resolution', 'private', 'say', 'give', 'aside')
          ORDER BY l.id ${newest ? 'DESC' : 'ASC'} LIMIT ?`,
       )
       .all(roomId, afterId, newest ? pick.newest : pick.oldest) as NarrationRow[];
@@ -768,7 +783,7 @@ export class GameEngine {
     const { n } = this.db
       .prepare(
         `SELECT COUNT(*) AS n FROM log_entries l
-         WHERE l.room_id = ? AND l.id > ? AND l.kind = 'narration' AND json_extract(l.data, '$.type') IN ('resolution', 'private', 'say', 'give')`,
+         WHERE l.room_id = ? AND l.id > ? AND l.kind = 'narration' AND json_extract(l.data, '$.type') IN ('resolution', 'private', 'say', 'give', 'aside')`,
       )
       .get(roomId, room.summary_until_log_id) as { n: number };
     if (n < RECENT_FOR_DM + SUMMARY_BATCH) return;
@@ -859,6 +874,8 @@ export class GameEngine {
         clueHolders: new Map(clues.map((c) => [c.key, new Set(c.holders)])),
         actorId: actor.id,
         gameEnd,
+        // 地图（V1.0.x）：这一次行动能花在路上的时间
+        minutes,
         rng: this.rng,
         allowDeath: style.death,
         // 宠物出手（V0.6.0）：交行动时勾了、带着宠物、这一局还没帮过
@@ -901,6 +918,27 @@ export class GameEngine {
           .all(actionId) as { id: number; name: string }[]
       ).filter((a) => characters.find((c) => c.id === a.id)?.location === actor.location);
 
+      // AI 角色（V1.1.0）：和行动的人在一起的、请了 AI 角色来演的 AI 队友，这一轮自己交行动，和这个行动一起结算
+      // （悄悄做的不带：叙述只有行动的人自己看得到）。回合模式下一轮只交一次；计时模式下它上一次交的行动做完以前不再交
+      const present = action.secret === 1 ? [] : personasAt(stored.companions, world, actor.location);
+      const turnOf = action.mode === 'round' ? action.round : null;
+      const acting = present.filter((c) =>
+        turnOf !== null ? world.personaTurns[c.roleKey] !== turnOf : (world.personaUntil[c.roleKey] ?? Number.NEGATIVE_INFINITY) <= gameStart,
+      );
+      const companionActs = acting.length
+        ? await this.personaActs(roomId, actionId, acting, {
+            stored,
+            world,
+            characters,
+            gameTime: gameStart,
+            location: actor.location,
+            thisRound: [{ name: actor.name, content: action.content }, ...pending.map((p) => ({ name: p.characterName, content: p.content }))],
+            language: style.language,
+            payer,
+          })
+        : [];
+      if (this.stopped) return;
+
       const memory = this.dmMemory(roomId);
       // 5E：结算开始时程序先处理了一些事（到时间的效果、死亡豁免），主持人看到的是处理完的样子
       const five = ctx instanceof Rules5eContext ? ctx : null;
@@ -917,13 +955,39 @@ export class GameEngine {
         summary: memory.summary,
         recent: memory.recent,
         companions: stored.companions,
+        companionActs: companionActs.map((a) => ({ name: a.companion.name, npcKey: a.companion.npcKey, content: a.content })),
       });
       const meta = { roomId, actionId, userId: this.userOfCharacter(actor.id), payer };
       const narration = await runDm({ ai: this.ai, scenario, context, ctx, meta, style, signal: this.abort.signal });
       if (this.stopped) return;
       // 结算做完：倒地的人倒数、失控的人回过神、这里的仗过了一轮
       if (ctx instanceof Rules2Context || ctx instanceof Rules5eContext) ctx.finish();
-      this.commit(action, scenario, gameStart, gameEnd, narration, ctx);
+      // AI 角色（V1.1.0）：记下这一轮交过了（交不出来、被拒绝的也算：不然这一轮后面的每个行动都再调用一次）、计时模式下这次做到几点；
+      // 看得到这段叙述的 AI 角色（和看得到的人一样：在行动的人最后在的地方，或者一开始就在那里），加上这次交了行动的
+      if (acting.length) {
+        for (const c of acting) {
+          if (turnOf !== null) ctx.world.personaTurns[c.roleKey] = turnOf;
+          else ctx.world.personaUntil[c.roleKey] = gameEnd;
+        }
+        ctx.worldChanged = true;
+      }
+      const finalAt = ctx.characters.get(actor.id)?.location ?? actor.location;
+      const seenBy =
+        action.secret === 1
+          ? []
+          : stored.companions
+              .filter((c) => {
+                if (!c.snapshot) return false;
+                if (companionActs.some((a) => a.companion.roleKey === c.roleKey)) return true;
+                const before = companionAt(c, world);
+                const after = companionAt(c, ctx.world);
+                return !after.dead && !!finalAt && (after.at === finalAt || (!before.dead && before.at === finalAt));
+              })
+              .map((c) => c.roleKey);
+      this.commit(action, scenario, gameStart, gameEnd, narration, ctx, {
+        acts: companionActs.map((a) => ({ name: a.companion.name, action: a.content })),
+        seenBy,
+      });
       this.maybeSummarizeStory(roomId);
     } catch (err) {
       if (this.stopped) return;
@@ -931,7 +995,117 @@ export class GameEngine {
     }
   }
 
-  private commit(action: ActionRow, scenario: Scenario, gameStart: number, gameEnd: number, narration: string, ctx: ResolutionContext) {
+  /**
+   * AI 角色（V1.1.0）交这一轮的行动：每个各调用一次 AI（一起发出去），只给它自己的角色知道的事（persona-act.ts）。
+   * 交不出来的（AI 用不了、出错、等太久、被安全机制拒绝）这一轮就不交，主持人照旧顺带演，不耽误这次结算。
+   * 花费记在这一局上，由参与游戏的人平摊；房主让主持人重新结算时（payer）和那次结算一样记给房主。用这一局的主持语言写。
+   */
+  private async personaActs(
+    roomId: number,
+    actionId: number,
+    acting: CompanionInfo[],
+    opts: {
+      stored: PlayScenario;
+      world: World;
+      characters: Character[];
+      gameTime: number;
+      location: string | null;
+      thisRound: { name: string; content: string }[];
+      language: StyleLanguage;
+      payer: number | null;
+    },
+  ): Promise<{ companion: CompanionInfo; content: string }[]> {
+    if (!this.ai.statusFor('companion', roomId).ready) return [];
+    const scenario = opts.stored.scenario;
+    const loc = scenario.locations.find((l) => l.key === opts.location);
+    const nameOf = (key: string) => scenario.locations.find((l) => l.key === key)?.name ?? key;
+    // 从这里能去的：明的出口（暗道它不知道）
+    const place = loc ? { name: loc.name, description: loc.description, exits: loc.exits.filter((e) => !e.hidden).map((e) => nameOf(e.to)) } : null;
+    const roleName = (key: string) => scenario.roles.find((r) => r.key === key)?.name ?? key;
+    const limit = AbortSignal.timeout(PERSONA_ACT_TIMEOUT_MS);
+    const results = await Promise.all(
+      acting.map(async (c) => {
+        const view: PersonaActView = {
+          name: c.name,
+          persona: c.snapshot!,
+          role: c.role,
+          attitude: COMPANION_ATTITUDE[scenario.relation] ?? COMPANION_ATTITUDE.coop,
+          scenario,
+          gameTime: opts.gameTime,
+          place,
+          present: [
+            ...opts.characters.filter((x) => !x.dead && x.location && x.location === opts.location).map((x) => ({ name: x.name, roleName: roleName(x.roleKey), ai: false })),
+            ...opts.stored.companions
+              .filter((o) => o.roleKey !== c.roleKey && (({ at, dead }) => !dead && at === opts.location)(companionAt(o, opts.world)))
+              .map((o) => ({ name: o.name, roleName: o.roleName, ai: true })),
+          ],
+          seen: this.personaSeen(roomId, c.roleKey),
+          thisRound: opts.thisRound,
+        };
+        try {
+          const content = await runPersonaAct({
+            ai: this.ai,
+            view,
+            meta: { roomId, actionId, billing: 'room', payer: opts.payer },
+            language: opts.language,
+            signal: AbortSignal.any([this.abort.signal, limit]),
+          });
+          return { companion: c, content };
+        } catch (err) {
+          if (this.stopped) return null;
+          if (err instanceof AiRefusal) {
+            // AI 写的、混着故事的内容：分不清是谁的，只标给管理员看
+            this.safety.refusal({ userId: null, roomId, source: 'companion', content: `${c.name}的人设：\n${c.snapshot!.prompt}`, category: err.category, soloAuthor: false });
+          } else if (!(err instanceof AiSwitchedOff)) {
+            const why = limit.aborted ? `等了 ${PERSONA_ACT_TIMEOUT_MS / 1000} 秒还没交` : err instanceof Error ? err.message : String(err);
+            console.error(`对局 ${roomId} 的 AI 角色「${c.name}」这一轮没交出行动：`, why);
+          }
+          return null;
+        }
+      }),
+    );
+    return results.filter((r): r is { companion: CompanionInfo; content: string } => r !== null);
+  }
+
+  /** AI 角色（V1.1.0）在场时最近的几件事（记录里 seenBy 有它的结算和对白），从早到晚。 */
+  private personaSeen(roomId: number, roleKey: string): SeenEntry[] {
+    const rows = this.db
+      .prepare(
+        `SELECT l.text, l.data, l.game_time FROM log_entries l
+         WHERE l.room_id = ? AND l.kind = 'narration' AND json_extract(l.data, '$.type') IN ('resolution', 'say')
+           AND EXISTS (SELECT 1 FROM json_each(l.data, '$.seenBy') j WHERE j.value = ?)
+         ORDER BY l.id DESC LIMIT ?`,
+      )
+      .all(roomId, roleKey, PERSONA_SEEN_MAX) as { text: string; data: string | null; game_time: number | null }[];
+    return rows.reverse().map((r) => ({ gameTime: r.game_time, text: r.text, data: r.data ? (JSON.parse(r.data) as StoredLogData) : null }));
+  }
+
+  /**
+   * 发给 AI 的内容是不是只来自一个人（被拒绝时按他的违规算）：单人局，而且没有请 AI 角色（V1.1.0）。
+   * 请了 AI 角色的局里，给主持人的材料混着 AI 角色的作者写的简介、它自己交的行动，分不清是谁的，和多人局一样只标给管理员看。
+   */
+  private soloAuthor(roomId: number): boolean {
+    return this.rooms.memberIds(roomId).length === 1 && !roomCompanions(this.db, roomId).some((c) => c.snapshot);
+  }
+
+  /** 这个地点上、请了 AI 角色来演的 AI 队友（V1.1.0）：它们在场，听得到对白、看得到结算。 */
+  private personasHere(roomId: number, location: string | null): CompanionInfo[] {
+    if (!location) return [];
+    const play = loadPlayScenario(this.db, roomId);
+    const room = loadRoom(this.db, roomId);
+    if (!play || !room) return [];
+    return personasAt(play.companions, parseWorld(room.world), location);
+  }
+
+  private commit(
+    action: ActionRow,
+    scenario: Scenario,
+    gameStart: number,
+    gameEnd: number,
+    narration: string,
+    ctx: ResolutionContext,
+    personas: { acts: { name: string; action: string }[]; seenBy: string[] } = { acts: [], seenBy: [] },
+  ) {
     const roomId = action.room_id;
     const now = this.now();
     const logIds: number[] = [];
@@ -1035,12 +1209,17 @@ export class GameEngine {
         ...(secret ? { secret: true } : {}),
         ...((ctx instanceof Rules2Context || ctx instanceof Rules5eContext) && ctx.events.length ? { events: ctx.events } : {}),
         ...(ctx instanceof Rules2Context && ctx.itemUses.length ? { itemUses: ctx.itemUses } : {}),
+        // AI 角色（V1.1.0）：和这个行动一起结算的它们的行动；看得到这段叙述的 AI 角色
+        ...(personas.acts.length ? { companions: personas.acts } : {}),
+        ...(personas.seenBy.length ? { seenBy: personas.seenBy } : {}),
       };
       // 用掉的道具（V0.7.0）：从账号的背包里扣
       if (ctx instanceof Rules2Context && ctx.itemUses.length) this.cards?.consumeItems(ctx.itemUses, (id) => this.userOfCharacter(id));
       // 悄悄做的：叙述只给行动的人自己（在场的人察觉到了什么，主持人用 private_message 单独告诉他们）
       const audience = secret ? [actor.id] : ctx.audience();
       logIds.push(insertLog(this.db, { roomId, kind: 'narration', text: narration, audience, data, gameTime: at, now }));
+      // 动静（V1.0.x）：看不到这段叙述、又听得到的人，单独告诉他
+      ctx.settleNoise(audience);
       for (const m of ctx.privateMessages) {
         logIds.push(
           insertLog(this.db, { roomId, kind: 'narration', text: m.text, audience: [m.characterId], data: { type: 'private', gameTime: at }, gameTime: at, now }),
@@ -1187,14 +1366,14 @@ export class GameEngine {
       });
     }
     this.pushGame(action.room_id);
-    // 单人局里的内容只来自他一个人：封号；多人局里发给 AI 的内容混着别人的：标给管理员看
+    // 单人局里的内容只来自他一个人：封号；多人局里发给 AI 的内容混着别人的：标给管理员看（请了 AI 角色的局也一样，见 soloAuthor）
     this.safety.refusal({
       userId: owner,
       roomId: action.room_id,
       source: 'action',
       content: action.content,
       category: err.category,
-      soloAuthor: this.rooms.memberIds(action.room_id).length === 1,
+      soloAuthor: this.soloAuthor(action.room_id),
     });
   }
 
@@ -1330,6 +1509,15 @@ export class GameEngine {
       // 交给 AI 演的身份（V0.8.0）：告诉大家谁由 AI 来演
       const companions = companionsOf(scenario, loadAiSeats(this.db, room.id), characters.map((c) => c.roleKey));
       if (companions.length) logIds.push(insertLog(this.db, { roomId: room.id, kind: 'system', text: companionsStartText(companions), now }));
+      // AI 角色（V1.1.0）：开局了才算被请进了一局（开团准备里来回换不算）。大厅的「请的人多」按请过它的不同房主算：
+      // 同一个房主请多少局都只算一次，作者自己请的不算（不然自己开局、请自己的、再开局，就能排到前面）
+      const invite = this.db.prepare(
+        'INSERT OR IGNORE INTO ai_persona_invites (persona_id, user_id, created_at) SELECT id, ?, ? FROM ai_personas WHERE id = ? AND user_id != ?',
+      );
+      const recount = this.db.prepare('UPDATE ai_personas SET invites = (SELECT COUNT(*) FROM ai_persona_invites WHERE persona_id = ?) WHERE id = ?');
+      for (const id of new Set(companions.flatMap((c) => (c.snapshot && c.personaId !== null ? [c.personaId] : [])))) {
+        if (invite.run(room.host_user_id, now, id, room.host_user_id).changes) recount.run(id, id);
+      }
       logIds.push(
         insertLog(this.db, {
           roomId: room.id,
@@ -1354,7 +1542,7 @@ export class GameEngine {
     const role = scenario.roles.find((r) => r.key === c.roleKey)!;
     const start = at ?? role.startLocation;
     const place = scenario.locations.find((l) => l.key === start);
-    this.db.prepare('UPDATE characters SET location = ?, visited = ? WHERE id = ?').run(start, JSON.stringify([start]), c.id);
+    this.db.prepare('UPDATE characters SET location = ?, spot = NULL, visited = ? WHERE id = ?').run(start, JSON.stringify([start]), c.id);
     const lines = [`你是${c.name}，${role.name}。${role.public}`];
     if (role.secret) lines.push(`只有你知道：${role.secret}`);
     lines.push(`你的目标：${role.goal}`);
@@ -1583,6 +1771,70 @@ export class GameEngine {
         return { ...r, attributes: match.attributes, specialties: match.specialties, appearance: match.appearance };
       });
       if (changed) this.db.prepare('UPDATE scenarios SET data = ? WHERE room_id = ?').run(JSON.stringify({ ...data, roles }), row.room_id);
+    }
+  }
+
+  /**
+   * 地图（V1.0.x）：以前开的局里存下来的自带剧本没写地点在地图上的位置（按路程自动摆）。scenarios 文件夹里同一个剧本
+   * 现在写了的，照着补上 x、y（地点一个不差地对得上才补；只补位置，暗道不补：进行中的局里突然多出暗道会乱）。启动时做一次，补过的不再补。
+   */
+  fillBuiltinMapPositions() {
+    const rows = this.db
+      .prepare("SELECT room_id, scenario_key, data FROM scenarios WHERE source = 'builtin' AND scenario_key IS NOT NULL")
+      .all() as { room_id: number; scenario_key: string; data: string }[];
+    const files = new Map<string, Scenario | null>();
+    for (const row of rows) {
+      let data: Scenario;
+      try {
+        data = JSON.parse(row.data) as Scenario;
+      } catch {
+        continue;
+      }
+      if (!Array.isArray(data.locations) || !data.locations.length || data.locations.some((l) => l.x !== undefined || l.y !== undefined)) continue;
+      if (!files.has(row.scenario_key)) {
+        const file = `${row.scenario_key}.json`;
+        const ok = SCENARIO_KEY_RE.test(row.scenario_key) && fs.existsSync(path.join(this.scenarioDir, file));
+        files.set(row.scenario_key, ok ? this.readBuiltin(file).scenario : null);
+      }
+      const current = files.get(row.scenario_key);
+      const placed = new Map((current?.locations ?? []).filter((l) => l.x !== undefined && l.y !== undefined).map((l) => [l.key, l]));
+      if (!data.locations.every((l) => placed.has(l.key))) continue;
+      const locations = data.locations.map((l) => ({ ...l, x: placed.get(l.key)!.x, y: placed.get(l.key)!.y }));
+      this.db.prepare('UPDATE scenarios SET data = ? WHERE room_id = ?').run(JSON.stringify({ ...data, locations }), row.room_id);
+    }
+  }
+
+  /**
+   * 站位（V1.0.x）：以前开的局里存下来的自带剧本没有站位。scenarios 文件夹里同一个剧本现在写了的，照着补上地点的站位和
+   * 嘈杂、昏暗（地点一个不差地对得上才补）。大家本来都在大家中间，补上以后只是主持人知道有哪些站位，进行中的局不受影响。
+   * 存下来的那份已经有站位的不再补。
+   */
+  fillBuiltinSpots() {
+    const rows = this.db
+      .prepare("SELECT room_id, scenario_key, data FROM scenarios WHERE source = 'builtin' AND scenario_key IS NOT NULL")
+      .all() as { room_id: number; scenario_key: string; data: string }[];
+    const files = new Map<string, Scenario | null>();
+    for (const row of rows) {
+      let data: Scenario;
+      try {
+        data = JSON.parse(row.data) as Scenario;
+      } catch {
+        continue;
+      }
+      if (!Array.isArray(data.locations) || !data.locations.length || data.locations.some((l) => l.spots !== undefined || l.noisy || l.dark)) continue;
+      if (!files.has(row.scenario_key)) {
+        const file = `${row.scenario_key}.json`;
+        const ok = SCENARIO_KEY_RE.test(row.scenario_key) && fs.existsSync(path.join(this.scenarioDir, file));
+        files.set(row.scenario_key, ok ? this.readBuiltin(file).scenario : null);
+      }
+      const current = new Map((files.get(row.scenario_key)?.locations ?? []).map((l) => [l.key, l]));
+      if (!data.locations.every((l) => current.has(l.key))) continue;
+      if (![...current.values()].some((l) => l.spots?.length || l.noisy || l.dark)) continue;
+      const locations = data.locations.map((l) => {
+        const now = current.get(l.key)!;
+        return { ...l, ...(now.spots?.length ? { spots: now.spots } : {}), ...(now.noisy ? { noisy: true } : {}), ...(now.dark ? { dark: true } : {}) };
+      });
+      this.db.prepare('UPDATE scenarios SET data = ? WHERE room_id = ?').run(JSON.stringify({ ...data, locations }), row.room_id);
     }
   }
 
@@ -2128,6 +2380,10 @@ export class GameEngine {
     if (rawTo !== undefined && rawTo !== null) {
       target = here.find((c) => c.id === rawTo && c.id !== me.id) ?? null;
       if (!target) throw new HttpError(409, '悄悄话只能说给同一个地点、还活着的其他角色');
+      // 站位（V1.0.x）：悄悄话要凑到身边才说得了
+      if (!sameSpot(me.spot, target.spot)) {
+        throw new HttpError(409, `悄悄话只能说给身边的人：${target.name}在${spotName(target.spot)}，你在${spotName(me.spot)}。要说给他听，先走过去（写进行动里）`);
+      }
     }
     return { text, room, me, here, target };
   }
@@ -2138,18 +2394,45 @@ export class GameEngine {
    */
   say(roomId: number, userId: number, rawText: unknown, rawTo: unknown) {
     const { text, room, me, here, target } = this.validateSay(roomId, userId, rawText, rawTo);
+    const gameTime = Math.floor(this.gameNow(room));
+    const now = this.now();
+    // AI 角色（V1.1.0）：在场的听得到（悄悄话只有对方听得到）；它交行动时看得到这句话
+    const personas = target ? [] : this.personasHere(roomId, me.location);
     const id = insertLog(this.db, {
       roomId,
       kind: 'narration',
       text,
       authorUserId: userId,
       audience: target ? [me.id, target.id] : here.map((c) => c.id),
-      data: { type: 'say', speaker: me.name, to: target?.name ?? null },
-      gameTime: Math.floor(this.gameNow(room)),
-      now: this.now(),
+      data: { type: 'say', speaker: me.name, to: target?.name ?? null, ...(personas.length ? { seenBy: personas.map((c) => c.roleKey) } : {}) },
+      gameTime,
+      now,
     });
     this.rooms.publishLog(id);
-    return { heardBy: (target ? [target] : here.filter((c) => c.id !== me.id)).map((c) => c.name) };
+    // 站位（V1.0.x）：悄悄话——身边别的人看得到两个人凑在一起说话（听不到内容）；那里嘈杂、昏暗的注意不到
+    let noticedBy: string[] = [];
+    if (target) {
+      const place = loadScenario(this.db, roomId)?.scenario.locations.find((l) => l.key === me.location);
+      const flags = spotFlags(place, me.spot);
+      const beside = here.filter((c) => c.id !== me.id && c.id !== target.id && sameSpot(c.spot, me.spot));
+      if (!flags.noisy && !flags.dark && beside.length) {
+        const seen = insertLog(this.db, {
+          roomId,
+          kind: 'narration',
+          text: `${me.name}凑到${target.name}耳边，低声说了几句什么。`,
+          audience: beside.map((c) => c.id),
+          data: { type: 'aside' },
+          gameTime,
+          now,
+        });
+        this.rooms.publishLog(seen);
+        noticedBy = beside.map((c) => c.name);
+      }
+    }
+    return {
+      heardBy: [...(target ? [target] : here.filter((c) => c.id !== me.id)).map((c) => c.name), ...personas.map((c) => c.name)],
+      ...(target ? { noticedBy } : {}),
+    };
   }
 
   /** 把自己的一件东西交给同一地点的另一个角色：马上生效，在场的人都看得到。 */
@@ -2214,8 +2497,10 @@ export class GameEngine {
     const roomId = action.room_id;
     // 估时的 AI 也要知道 AI 队友是谁（V0.8.0）
     const stored = loadPlayScenario(this.db, roomId);
-    const actor = loadCharacters(this.db, roomId).find((c) => c.id === action.character_id);
-    if (!stored || !actor) return;
+    const characters = loadCharacters(this.db, roomId);
+    const actor = characters.find((c) => c.id === action.character_id);
+    const room0 = loadRoom(this.db, roomId);
+    if (!stored || !actor || !room0) return;
     let minutes = DEFAULT_MINUTES;
     let note: string;
     let kind: 'action' | 'question' = 'action';
@@ -2227,6 +2512,11 @@ export class GameEngine {
         actor,
         content: action.content,
         companions: stored.companions,
+        // 只给他自己的地图上的地方和路（估时的说明玩家看得到）
+        routes: knownRoutesText(
+          mapViewOf(stored.scenario, parseWorld(room0.world), characters, { me: actor, full: false, companions: stored.companions }),
+          actor.location,
+        ),
         meta: { roomId, actionId, userId: this.userOfCharacter(actor.id) },
         signal: AbortSignal.any([this.abort.signal, limit]),
       });
@@ -2448,9 +2738,13 @@ export class GameEngine {
       .filter((c) => c !== undefined)
       .map((c) => ({ title: c.title, content: c.content }));
     // AI 队友（V0.8.0）：只给名字、身份和公开介绍（秘密只有主持结算时看得到）
-    const companions = companionsOf(stored.scenario, loadAiSeats(this.db, roomId), loadCharacters(this.db, roomId).map((c) => c.roleKey)).map(
-      (c) => ({ name: c.name, roleName: c.roleName, public: c.role.public }),
-    );
+    const characters = loadCharacters(this.db, roomId);
+    const companionInfos = companionsOf(stored.scenario, loadAiSeats(this.db, roomId), characters.map((c) => c.roleKey));
+    const companions = companionInfos.map((c) => ({ name: c.name, roleName: c.roleName, public: c.role.public }));
+    // 地图（V1.0.x）：和他在地图页签上看到的一样
+    const world = parseWorld(room.world);
+    const routes = knownRoutesText(mapViewOf(stored.scenario, world, characters, { me, full: false, companions: companionInfos }), me.location, { path: true });
+    const knownExits = exitsKnownTo(world, stored.scenario, characters, me.id);
 
     this.track(
       (async () => {
@@ -2465,6 +2759,8 @@ export class GameEngine {
               gameTime: this.gameNow(room),
               question,
               companions,
+              knownExits,
+              routes,
             },
             meta: { roomId, userId },
             language: parseStyle(room.style).language,
@@ -2486,7 +2782,7 @@ export class GameEngine {
               source: 'question',
               content: question,
               category: err.category,
-              soloAuthor: this.rooms.memberIds(roomId).length === 1,
+              soloAuthor: this.soloAuthor(roomId),
             });
           }
         } finally {
@@ -2655,9 +2951,30 @@ export class GameEngine {
     const mode = this.rooms.presence(roomId).mode;
     const world = parseWorld(room.world);
     // 交给 AI 演的身份（V0.8.0）：名字和身份大家都看得到
-    const companions = scenario
-      ? companionsOf(scenario, loadAiSeats(this.db, roomId), characters.map((c) => c.roleKey)).map(({ roleKey, roleName, name }) => ({ roleKey, roleName, name }))
+    const companionInfos = scenario ? companionsOf(scenario, loadAiSeats(this.db, roomId), characters.map((c) => c.roleKey)) : [];
+    // AI 角色（V1.1.0）：请进来时的名字、简介和作者大家都看得到；AI 大厅里的编号只给看得到它的人（公开的、自己做的）
+    const personaIds = companionInfos.flatMap((c) => (c.personaId !== null ? [c.personaId] : []));
+    // 大厅里还看得到的：公开的、作者没被封号也没删账号（和 AI 大厅一样），或者是自己做的
+    const hallRows = personaIds.length
+      ? (this.db
+          .prepare(
+            `SELECT p.id, p.user_id, p.public = 1 AND u.banned_at IS NULL AND u.deleted_at IS NULL AS listed
+             FROM ai_personas p JOIN users u ON u.id = p.user_id WHERE p.id IN (${personaIds.map(() => '?').join(', ')})`,
+          )
+          .all(...personaIds) as { id: number; user_id: number; listed: number }[])
       : [];
+    const hallId = (id: number | null) => {
+      const row = id === null ? undefined : hallRows.find((r) => r.id === id);
+      return row && (row.listed === 1 || row.user_id === userId) ? row.id : null;
+    };
+    const companions = companionInfos.map(({ roleKey, roleName, name, personaId, snapshot }) => ({
+      roleKey,
+      roleName,
+      name,
+      persona: snapshot ? { id: hallId(personaId), name: snapshot.name, intro: snapshot.intro, author: snapshot.author } : null,
+    }));
+    // 暗道（V1.0.x 地图）：发现了的才列在「从这里能去」里
+    const knownExits = me && scenario ? exitsKnownTo(world, scenario, characters, me.id) : new Set<string>();
 
     const place = (key: string | null): PlaceInfo | null => {
       const loc = scenario?.locations.find((l) => l.key === key);
@@ -2666,7 +2983,10 @@ export class GameEngine {
         key: loc.key,
         name: loc.name,
         description: loc.description,
-        exits: loc.exits.map((e) => ({ key: e.to, name: scenario.locations.find((l) => l.key === e.to)?.name ?? e.to, minutes: e.minutes })),
+        exits: loc.exits
+          .filter((e) => !e.hidden || knownExits.has(pathKey(loc.key, e.to)))
+          .map((e) => ({ key: e.to, name: scenario.locations.find((l) => l.key === e.to)?.name ?? e.to, minutes: e.minutes })),
+        ...placeSpots(loc),
       };
     };
 
@@ -2735,6 +3055,7 @@ export class GameEngine {
             id: c.id,
             name: c.name,
             roleName: roleOf(c.roleKey)?.name ?? c.roleKey,
+            spot: c.spot ?? null,
             action: a
               ? {
                   id: a.id,
@@ -2790,7 +3111,7 @@ export class GameEngine {
             },
       mode,
       style: parseStyle(room.style),
-      dungeon: scenario?.rules === 2 ? dungeonView(scenario, world, me, characters.length, !!stored && rankedDungeon(stored)) : null,
+      dungeon: scenario?.rules === 2 ? dungeonView(scenario, world, me, characters, !!stored && rankedDungeon(stored)) : null,
       fight5e: scenario?.rules === '5e' ? fight5eView(world, me, characters) : null,
       round,
       me: me
@@ -2811,6 +3132,7 @@ export class GameEngine {
             conditions: me.conditions,
             items: me.items,
             location: place(me.location),
+            spot: me.location ? (me.spot ?? null) : null,
             visited: me.visited.map(place).filter((p) => p !== null),
             dead: me.dead,
             blocked: scenario ? blockerFor(me, scenario.stress) : null,
@@ -2838,6 +3160,24 @@ export class GameEngine {
           class5e: class5eLine(c),
         })),
       companions,
+      // 和你在一起的 AI 队友（V1.1.0）：「在场的人」里列出来，对白它们也听得到
+      nearbyCompanions:
+        me && !me.dead && me.location && room.status !== 'preparing'
+          ? companionInfos
+              .filter((c) => (({ at, dead }) => !dead && at === me.location)(companionAt(c, world)))
+              .map((c) => ({ roleKey: c.roleKey, name: c.name, roleName: c.roleName, persona: !!c.snapshot }))
+          : [],
+      // 地图（V1.0.x）：开局以后成员看得到自己走过的那一部分；结束了、不在这一局里玩的管理员看整张
+      map:
+        scenario && room.status !== 'preparing'
+          ? mapViewOf(scenario, world, characters, {
+              me,
+              full: room.status === 'ended' || (watching && manager),
+              npcs: watching && manager,
+              companions: companionInfos,
+              clueKeys: clues.map((c) => c.key),
+            })
+          : null,
       myAction,
       nearby,
       clues,
@@ -2963,9 +3303,10 @@ function character2View(s: V2State): Character2View {
 }
 
 /** 网页上的地下城局面：难度、减值、自己所在地点正在打的仗。普通的第二版剧本难度按 1 算。 */
-function dungeonView(scenario: Scenario, world: ReturnType<typeof parseWorld>, me: Character | null, players: number, ranked: boolean): DungeonView {
+export function dungeonView(scenario: Scenario, world: ReturnType<typeof parseWorld>, me: Character | null, characters: Character[], ranked: boolean): DungeonView {
   const level = scenario.dungeon?.level ?? 1;
   const size = scenario.dungeon?.size ?? 'small';
+  const players = characters.length;
   const fight = me?.location ? world.combats[me.location] : undefined;
   return {
     level,
@@ -2975,8 +3316,28 @@ function dungeonView(scenario: Scenario, world: ReturnType<typeof parseWorld>, m
     penalty: levelPenalty(level) + shorthandedPenalty(size, players),
     combat: fight
       ? {
-          order: fight.order.map((o) => ({ name: o.name, side: o.side, initiative: o.initiative })),
-          enemies: fight.enemies.map((e) => ({ id: e.id, name: e.name, tier: e.tier, hp: e.hp, hpMax: e.hpMax, defeated: e.defeated, ...(e.fled ? { fled: true } : {}), shielded: e.shielded })),
+          order: fight.order.map((o) => {
+            const c = o.side === 'ally' ? characters.find((x) => `c${x.id}` === o.id) : undefined;
+            const e = o.side === 'enemy' ? fight.enemies.find((x) => x.id === o.id) : undefined;
+            return {
+              name: o.name,
+              side: o.side,
+              initiative: o.initiative,
+              spot: (c ? c.spot : e?.spot) ?? null,
+              down: c ? c.dead || (c.v2?.dying ?? null) !== null : !!e?.defeated,
+            };
+          }),
+          enemies: fight.enemies.map((e) => ({
+            id: e.id,
+            name: e.name,
+            tier: e.tier,
+            hp: e.hp,
+            hpMax: e.hpMax,
+            defeated: e.defeated,
+            ...(e.fled ? { fled: true } : {}),
+            shielded: e.shielded,
+            spot: e.spot ?? null,
+          })),
         }
       : null,
   };

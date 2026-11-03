@@ -1,5 +1,6 @@
 import type { DB } from '../db';
 import { HttpError } from '../http';
+import type { PersonaSnapshot } from '../personas';
 import { rejectInvisibleName } from '../util';
 import type { Companion } from '../../shared/game';
 import type { Npc, Relation, Role, Scenario } from './scenario';
@@ -13,6 +14,10 @@ import { loadRoom, loadScenario, type StoredScenario, type World } from './world
 // 数据库里只记哪个身份交给了 AI、叫什么（ai_seats）。给主持 AI 用、结算用的那份剧本（loadPlayScenario）里，
 // 这些身份从 roles 里拿掉，变成 npcs 里标着「AI 队友」的 NPC，update_npc 这些现成的工具就能记他的位置、伤和状态。
 // 数据库里存的剧本不改：投稿、地下城、宠物、管理页用的都是存的那份。
+//
+// AI 角色（V1.1.0 AI 大厅）：交给 AI 演的身份可以请一个 AI 角色来演（ai_seats.persona 是请进来那一刻的样子）。
+// 它照样是给主持 AI 的剧本里标着「AI 队友」的 NPC（位置、伤和状态照旧用 update_npc 记），只是不再由主持人替它拿主意：
+// 每一轮它照自己的人设、只用自己的角色知道的事交行动（persona-act.ts），主持人和在场的人的行动一起结算（engine.ts 的 resolveOne）。
 
 /** AI 队友的名字最多几个字（和角色名一样）。 */
 export const AI_SEAT_NAME_MAX = 20;
@@ -20,18 +25,36 @@ export const AI_SEAT_NAME_MAX = 20;
 /** 给主持 AI 的剧本里，AI 队友的 identity 以它开头（主持规则里认这个标记）。 */
 export const COMPANION_MARK = 'AI 队友';
 
-export type AiSeat = { roleKey: string; name: string };
+/** persona：请来演这个身份的 AI 角色（请进来那一刻的样子），没有是主持人顺带演；personaId 是 AI 大厅里的那个（删掉了是 null）。 */
+export type AiSeat = { roleKey: string; name: string; personaId?: number | null; persona?: PersonaSnapshot | null };
 
-/** 一个 AI 队友：身份、名字，和他在给主持 AI 的那份剧本里的 NPC key。 */
-export type CompanionInfo = Companion & { npcKey: string; role: Role };
+/** 一个 AI 队友：身份、名字，和他在给主持 AI 的那份剧本里的 NPC key；请了 AI 角色来演的，带着它的人设（snapshot）。 */
+export type CompanionInfo = Omit<Companion, 'persona'> & { npcKey: string; role: Role; personaId: number | null; snapshot: PersonaSnapshot | null };
 
 /** 给主持 AI 用、结算用的剧本：存的那份加上 AI 队友。 */
 export type PlayScenario = StoredScenario & { companions: CompanionInfo[] };
 
 /** 这一局交给 AI 的身份（按标的先后；要按剧本里身份的顺序用 companionsOf）。 */
 export function loadAiSeats(db: DB, roomId: number): AiSeat[] {
-  const rows = db.prepare('SELECT role_key, name FROM ai_seats WHERE room_id = ? ORDER BY created_at, role_key').all(roomId) as { role_key: string; name: string }[];
-  return rows.map((r) => ({ roleKey: r.role_key, name: r.name }));
+  const rows = db.prepare('SELECT role_key, name, persona_id, persona FROM ai_seats WHERE room_id = ? ORDER BY created_at, role_key').all(roomId) as {
+    role_key: string;
+    name: string;
+    persona_id: number | null;
+    persona: string | null;
+  }[];
+  return rows.map((r) => ({ roleKey: r.role_key, name: r.name, personaId: r.persona_id, persona: parseSnapshot(r.persona) }));
+}
+
+/** 存着的 AI 角色的样子；坏了的当成没有（这个身份就由主持人顺带演）。 */
+function parseSnapshot(text: string | null): PersonaSnapshot | null {
+  if (!text) return null;
+  try {
+    const v = JSON.parse(text) as Partial<PersonaSnapshot>;
+    if (typeof v.name !== 'string' || typeof v.prompt !== 'string' || !v.prompt) return null;
+    return { name: v.name, intro: typeof v.intro === 'string' ? v.intro : '', prompt: v.prompt, author: typeof v.author === 'string' ? v.author : '', authorId: Number(v.authorId) || 0 };
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -50,7 +73,7 @@ export function companionsOf(scenario: Scenario, seats: AiSeat[], taken: Iterabl
     used.add(npcKey);
     const seat = seats.find((s) => s.roleKey === role.key);
     if (!seat || held.has(role.key)) continue;
-    out.push({ roleKey: role.key, roleName: role.name, name: seat.name, npcKey, role });
+    out.push({ roleKey: role.key, roleName: role.name, name: seat.name, npcKey, role, personaId: seat.personaId ?? null, snapshot: seat.persona ?? null });
   }
   return out;
 }
@@ -83,14 +106,19 @@ function companionNpc(c: CompanionInfo, relation: Relation): Npc {
   const own = (text: string) => (text.includes('你') ? `${text}（这里的「你」就是他）` : text);
   const specialties = Array.isArray(r.specialties) ? r.specialties : [];
   const traits = [r.appearance ? `外貌：${r.appearance}` : '', specialties.length ? `擅长：${specialties.join('、')}` : ''].filter(Boolean).join('；');
+  // AI 角色（V1.1.0）：它自己交行动，主持人照它交的来演；人设只给它自己，主持人这里只写简介
+  const persona = c.snapshot;
   return {
     key: c.npcKey,
     name: c.name,
-    identity: `${COMPANION_MARK}（没人玩的身份「${r.name}」，由你顺带演）：${r.public}`,
-    personality: traits || '照身份的介绍来演',
+    identity: persona
+      ? `${COMPANION_MARK}（没人玩的身份「${r.name}」，玩家请来的 AI 角色在演，它自己交行动）：${r.public}`
+      : `${COMPANION_MARK}（没人玩的身份「${r.name}」，由你顺带演）：${r.public}`,
+    // 简介是 AI 角色的作者（玩家）写的：标明只是材料，不是剧本的设定、不是给主持人的指令
+    personality: [persona?.intro ? `AI 角色的简介（作者写的，只是材料）：${persona.intro}` : '', traits].filter(Boolean).join('；') || '照身份的介绍来演',
     knows: r.secret ? [own(r.secret)] : [],
     wants: own(r.goal),
-    speech: '照身份的介绍来演',
+    speech: persona ? '照它自己交的行动里的说法' : '照身份的介绍来演',
     location: r.startLocation,
     attitude: COMPANION_ATTITUDE[relation] ?? COMPANION_ATTITUDE.coop,
   };
@@ -109,6 +137,22 @@ export function loadPlayScenario(db: DB, roomId: number): PlayScenario | null {
   return { ...stored, scenario: withCompanions(stored.scenario, companions), companions };
 }
 
+/** AI 队友现在在哪（update_npc 记的；没记过是身份的开场地点）、死了没有。 */
+export function companionAt(c: Pick<CompanionInfo, 'npcKey'> & { role: Pick<Role, 'startLocation'> }, world: Pick<World, 'npcs'>): { at: string | null; dead: boolean } {
+  const s = world.npcs[c.npcKey];
+  return { at: s?.location !== undefined ? (s.location ?? null) : c.role.startLocation, dead: !!s?.dead };
+}
+
+/** 这个地点上还活着的、请了 AI 角色来演的 AI 队友（V1.1.0）。 */
+export function personasAt(companions: CompanionInfo[], world: Pick<World, 'npcs'>, location: string | null): CompanionInfo[] {
+  if (!location) return [];
+  return companions.filter((c) => {
+    if (!c.snapshot) return false;
+    const { at, dead } = companionAt(c, world);
+    return !dead && at === location;
+  });
+}
+
 /** 这一局的 AI 队友（没有剧本、没有交给 AI 的身份是空的）。 */
 export function roomCompanions(db: DB, roomId: number): CompanionInfo[] {
   return loadPlayScenario(db, roomId)?.companions ?? [];
@@ -118,13 +162,15 @@ function heldRoles(db: DB, roomId: number): string[] {
   return (db.prepare('SELECT role_key FROM characters WHERE room_id = ?').all(roomId) as { role_key: string }[]).map((r) => r.role_key);
 }
 
-/** 开局时写给大家看的一句：「记者」由 AI 来演：林小满。（没起名字的只写身份） */
-export function companionsStartText(companions: Pick<Companion, 'roleName' | 'name'>[]): string {
+/** 开局时写给大家看的一句：「记者」由 AI 来演：林小满。（没起名字的只写身份；请了 AI 角色的写「由 AI 角色「林小满」来演」） */
+export function companionsStartText(companions: (Pick<Companion, 'roleName' | 'name'> & { snapshot?: PersonaSnapshot | null })[]): string {
   if (companions.length === 1) {
     const c = companions[0];
+    if (c.snapshot) return `「${c.roleName}」由 AI 角色「${c.name}」来演。`;
     return c.name === c.roleName ? `「${c.roleName}」由 AI 来演。` : `「${c.roleName}」由 AI 来演：${c.name}。`;
   }
-  return `这几个身份由 AI 来演：${companions.map((c) => (c.name === c.roleName ? `「${c.roleName}」` : `「${c.roleName}」${c.name}`)).join('、')}。`;
+  const part = (c: (typeof companions)[number]) => (c.snapshot ? `「${c.roleName}」AI 角色${c.name}` : c.name === c.roleName ? `「${c.roleName}」` : `「${c.roleName}」${c.name}`);
+  return `这几个身份由 AI 来演：${companions.map(part).join('、')}。`;
 }
 
 // ==================== 房主标「AI 演」 ====================
@@ -155,17 +201,26 @@ function seatContext(db: DB, roomId: number, adding: boolean) {
   return { scenario: stored.scenario, characters, seats: loadAiSeats(db, roomId) };
 }
 
+/** 请一个 AI 角色来演（V1.1.0）：大厅里的编号和请进来时的样子；null 是不请了（换回主持人顺带演），不写是照旧。 */
+export type SeatPersona = { id: number; snapshot: PersonaSnapshot } | null | undefined;
+
 /**
- * 把一个身份交给 AI 演（或者改名字）之前的检查（不写入）。名字不写就用身份的名字。
- * needsCheck：起了新名字（不是身份的名字，也不是原来的名字），要先发给 AI 检查内容（它会写进给主持 AI 的提示词）。
+ * 把一个身份交给 AI 演（或者改名字、换 AI 角色）之前的检查（不写入）。名字不写：请了 AI 角色的用它的名字，不然用身份的名字。
+ * needsCheck：起了新名字（不是身份的名字、原来的名字、AI 角色的名字），要先发给 AI 检查内容（它会写进给主持 AI 的提示词）。
+ * AI 角色的名字、人设在 AI 大厅里检查过。
  */
-export function checkAiSeat(db: DB, roomId: number, roleKey: string, rawName: unknown) {
+export function checkAiSeat(db: DB, roomId: number, roleKey: string, rawName: unknown, persona?: SeatPersona) {
   const { scenario, characters, seats } = seatContext(db, roomId, true);
   const role = scenario.roles.find((r) => r.key === roleKey);
   if (!role) throw new HttpError(404, '剧本里没有这个身份');
   if (characters.some((c) => c.role_key === roleKey)) throw new HttpError(409, '这个身份已经有人选了，不能交给 AI');
   if (rawName !== undefined && rawName !== null && typeof rawName !== 'string') throw new HttpError(400, '请求格式不对');
-  const name = (typeof rawName === 'string' ? rawName.trim() : '') || role.name;
+  // 名字没写：换了 AI 角色用它的名字，换回主持人顺带演用身份的名字，别的照原来的；
+  // 写了空的（清空了名字）：请着 AI 角色的用它的名字，不然用身份的名字
+  const before = seats.find((s) => s.roleKey === roleKey);
+  const given = typeof rawName === 'string' ? rawName.trim() : null;
+  const personaName = persona ? persona.snapshot.name : persona === null ? null : (before?.persona?.name ?? null);
+  const name = given || (given === '' || persona !== undefined ? (personaName ?? role.name) : (before?.name ?? role.name));
   if ([...name].length > AI_SEAT_NAME_MAX) throw new HttpError(400, `名字最多${AI_SEAT_NAME_MAX}个字`);
   // 名字会写进记录和给主持 AI 的提示词：换行、改文字方向的、零宽这些看不见的字符不要
   rejectInvisibleName(name);
@@ -178,17 +233,24 @@ export function checkAiSeat(db: DB, roomId: number, roleKey: string, rawName: un
   // 还没有人建角色时，至少留一个身份给玩家自己选（不然谁都选不了，也开不了局）
   const free = scenario.roles.filter((r) => r.key !== roleKey && !seats.some((s) => s.roleKey === r.key) && !characters.some((c) => c.role_key === r.key));
   if (!existing && !characters.length && !free.length) throw new HttpError(409, '至少留一个身份给玩家自己选');
-  return { role, name, existing, needsCheck: name !== role.name && name !== existing?.name };
+  return { role, name, existing, needsCheck: name !== role.name && name !== existing?.name && name !== personaName };
 }
 
-/** 写进去（先用 checkAiSeat 检查过）。返回 added 新交给 AI、renamed 改了名字、same 没变。 */
-export function saveAiSeat(db: DB, roomId: number, roleKey: string, name: string, now: number): 'added' | 'renamed' | 'same' {
-  const before = db.prepare('SELECT name FROM ai_seats WHERE room_id = ? AND role_key = ?').get(roomId, roleKey) as { name: string } | undefined;
-  if (before?.name === name) return 'same';
+/**
+ * 写进去（先用 checkAiSeat 检查过）。persona 不写是照旧，null 是不请 AI 角色了（主持人顺带演），写了就换成它。
+ * 返回 added 新交给 AI、renamed 改了名字或者换了 AI 角色、same 没变。
+ */
+export function saveAiSeat(db: DB, roomId: number, roleKey: string, name: string, now: number, persona?: SeatPersona): 'added' | 'renamed' | 'same' {
+  const before = db.prepare('SELECT name, persona_id, persona FROM ai_seats WHERE room_id = ? AND role_key = ?').get(roomId, roleKey) as
+    | { name: string; persona_id: number | null; persona: string | null }
+    | undefined;
+  const personaId = persona === undefined ? (before?.persona_id ?? null) : (persona?.id ?? null);
+  const snapshot = persona === undefined ? (before?.persona ?? null) : persona ? JSON.stringify(persona.snapshot) : null;
+  if (before && before.name === name && before.persona_id === personaId && before.persona === snapshot) return 'same';
   db.prepare(
-    `INSERT INTO ai_seats (room_id, role_key, name, created_at) VALUES (?, ?, ?, ?)
-     ON CONFLICT (room_id, role_key) DO UPDATE SET name = excluded.name`,
-  ).run(roomId, roleKey, name, now);
+    `INSERT INTO ai_seats (room_id, role_key, name, persona_id, persona, created_at) VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT (room_id, role_key) DO UPDATE SET name = excluded.name, persona_id = excluded.persona_id, persona = excluded.persona`,
+  ).run(roomId, roleKey, name, personaId, snapshot, now);
   return before ? 'renamed' : 'added';
 }
 
@@ -264,18 +326,27 @@ export type SeatChange = 'added' | 'renamed' | 'removed';
  */
 export const SEAT_LOG_MERGE_MS = 10 * 60_000;
 
-/** 记录里的一句。by 是谁做的（房主、管理员、站长）。 */
-export function seatLogText(by: string, change: SeatChange, roleName: string, name: string): string {
-  if (change === 'added') return `${by}把「${roleName}」交给 AI 来演${name === roleName ? '' : `：${name}`}`;
-  if (change === 'renamed') return `${by}给 AI 来演的「${roleName}」改了名字：${name}`;
+/**
+ * 记录里的一句。by 是谁做的（房主、管理员、站长）。persona（V1.1.0）：现在请了 AI 角色来演是 true；
+ * 刚把请来的 AI 角色换下、改成主持人顺带演是 dropped。renamed 包括换了 AI 角色、换回主持人顺带演。
+ */
+export function seatLogText(by: string, change: SeatChange, roleName: string, name: string, persona: boolean | 'dropped' = false): string {
+  if (change === 'added') return persona === true ? `${by}请 AI 角色「${name}」来演「${roleName}」` : `${by}把「${roleName}」交给 AI 来演${name === roleName ? '' : `：${name}`}`;
+  if (change === 'renamed') {
+    if (persona === true) return `${by}改请 AI 角色「${name}」来演「${roleName}」`;
+    if (persona === 'dropped') return `${by}改由主持人顺带演「${roleName}」${name === roleName ? '' : `：${name}`}`;
+    return `${by}给 AI 来演的「${roleName}」改了名字：${name}`;
+  }
   return `${by}不再让 AI 演「${roleName}」，这个身份可以选了`;
 }
 
 /** 一条记录是不是 by 对这个身份写的上面那几句之一（是哪一种）；不是返回 null。 */
 export function seatLogChange(text: string, by: string, roleName: string): SeatChange | null {
   const added = `${by}把「${roleName}」交给 AI 来演`;
-  if (text === added || text.startsWith(`${added}：`)) return 'added';
-  if (text.startsWith(`${by}给 AI 来演的「${roleName}」改了名字：`)) return 'renamed';
+  const persona = (lead: string) => text.startsWith(`${by}${lead} AI 角色「`) && text.endsWith(`」来演「${roleName}」`);
+  if (text === added || text.startsWith(`${added}：`) || persona('请')) return 'added';
+  const dropped = `${by}改由主持人顺带演「${roleName}」`;
+  if (text.startsWith(`${by}给 AI 来演的「${roleName}」改了名字：`) || persona('改请') || text === dropped || text.startsWith(`${dropped}：`)) return 'renamed';
   if (text === seatLogText(by, 'removed', roleName, '')) return 'removed';
   return null;
 }
@@ -292,4 +363,27 @@ export function seatLogMerge(prev: SeatChange, change: SeatChange): { replace: b
   if (prev === 'added' && change === 'renamed') return { replace: true, write: 'added' };
   if (prev === 'renamed') return { replace: true, write: change };
   return { replace: false, write: change };
+}
+
+/** 一条记录是哪一种写法（V1.1.0）：请了 AI 角色的（请、改请）、把请来的 AI 角色换下来的（改由主持人顺带演）、别的。 */
+export type SeatFlavor = 'persona' | 'dropped' | 'plain';
+
+export function seatLogFlavor(text: string, by: string, roleName: string): SeatFlavor {
+  const persona = (lead: string) => text.startsWith(`${by}${lead} AI 角色「`) && text.endsWith(`」来演「${roleName}」`);
+  if (persona('请') || persona('改请')) return 'persona';
+  const dropped = `${by}改由主持人顺带演「${roleName}」`;
+  if (text === dropped || text.startsWith(`${dropped}：`)) return 'dropped';
+  return 'plain';
+}
+
+/**
+ * 要写的那一句用哪种写法（seatLogText 的 persona）。write：合并以后要写的；own：这次改动本身（请了或换了 AI 角色是 persona，
+ * 把请来的换下来是 dropped，只改名字是 plain）；prev：被撤掉、合并进来的上一条的写法；has：现在是不是请着 AI 角色。
+ * 合并以后的一句要说清楚从上一条之前到现在变了什么：刚请了 AI 角色又改名字，还是「请 AI 角色」；刚改请又改名字，还是「改请」。
+ */
+export function seatLogPersona(write: SeatChange, own: SeatFlavor, prev: SeatFlavor | null, has: boolean): boolean | 'dropped' {
+  if (write === 'added') return has;
+  if (write === 'removed') return false;
+  if (has) return own === 'persona' || prev === 'persona' || prev === 'dropped';
+  return own === 'dropped' || prev === 'dropped' || prev === 'persona' ? 'dropped' : false;
 }

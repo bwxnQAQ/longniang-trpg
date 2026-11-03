@@ -395,9 +395,26 @@
 }
 
 .place-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
   font-family: var(--font-story);
   font-size: 18px;
   font-weight: 700;
+}
+
+/* 站位（V1.0.x）：地点名后面写站在哪 */
+.place-spot {
+  margin-left: -6px;
+  color: var(--ink-soft);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.place-name .chip {
+  font-family: var(--font-ui);
+  font-weight: 400;
 }
 
 .place-desc,

@@ -76,6 +76,8 @@ export const LIMITS = {
   editorSave: { max: 60, windowMs: 60_000, message: '存得太频繁了，过一会儿再存' },
   /** 把身份交给 AI 演、改名字、取消（V0.8.0 AI 补位）：按账号算，防止来回切刷屏。 */
   aiSeat: { max: 20, windowMs: 60_000, message: '交给 AI 的身份改得太频繁了，过一分钟再改' },
+  /** 新建、修改 AI 角色（V1.1.0 AI 大厅，要做内容检查）：按账号算。 */
+  persona: { max: 30, windowMs: 60 * 60_000, message: 'AI 角色改得太频繁了，请过一会儿再试' },
 } satisfies Record<string, Rule>;
 
 export type LimitName = keyof typeof LIMITS;

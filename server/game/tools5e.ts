@@ -1,5 +1,6 @@
 // 5E 规则（V0.9.0）的一次结算：检定、豁免、攻击、怪物行动、施法、职业能力、伤害治疗、状态、战斗、休息、物品、宝藏。
 // 工具定义在 tools5e-defs.ts，计算在 rules5e.ts；和别的规则一样，只改这里的副本，结算成功才写进数据库。
+import { matchSpot, sameSpot, spotFlags, spotName } from '../../shared/spots';
 import {
   ABILITIES,
   ABILITY_NAME,
@@ -550,9 +551,73 @@ export class Rules5eContext extends ResolutionContext {
     return input.cover === 'half' ? 2 : input.cover === 'three-quarters' ? 5 : 0;
   }
 
-  /** 这次攻击要掷到的怪物 AC：数据块的，加上它身上的效果和掩护。 */
-  private monsterAc(m: Monster5eState, input: Input): number {
-    return m.ac + m.effects.reduce((sum, e) => sum + (e.mods.ac ?? 0), 0) + this.cover(input);
+  /** 这次攻击要掷到的怪物 AC：数据块的，加上它身上的效果和掩护（站位的掩体和主持人写的取大的）。 */
+  private monsterAc(m: Monster5eState, input: Input, spotCover = 0): number {
+    return m.ac + m.effects.reduce((sum, e) => sum + (e.mods.ac ?? 0), 0) + Math.max(this.cover(input), spotCover);
+  }
+
+  // ==================== 站位（V1.0.x） ====================
+
+  /** 这个地点、这个站位的属性（嘈杂、昏暗、掩体）。 */
+  private flagsAt(location: string | null, spot: string | null | undefined) {
+    return spotFlags(this.scenario.locations.find((l) => l.key === location), spot);
+  }
+
+  /** 远程攻击打站在掩体里的目标：半身掩护，AC +2（主持人写了更大的掩护就按他的）。 */
+  private spotCover(location: string | null, spot: string | null | undefined, input: Input, who: string, notes: string[]): number {
+    if (!this.flagsAt(location, spot).cover) return 0;
+    if (this.cover(input) < 2) notes.push(`${who}站在${spotName(spot)}，有掩体：AC +2（半身掩护）`);
+    return 2;
+  }
+
+  /** 近战够不够得着：要和敌人站在同一个站位。 */
+  private reach(c: Character, m: Monster5eState, what = '近战') {
+    if (sameSpot(c.spot, m.spot)) return;
+    throw new ToolError(
+      `${m.name}（${m.id}）站在${spotName(m.spot)}，${c.name}在${spotName(c.spot)}：${what}够不着。先用 set_spot 让${c.name}走过去（离开身边的敌人会招来借机攻击）；用的是远程就换远程武器或者填 thrown`,
+    );
+  }
+
+  /** 角色身边（同一个站位）还能动手的敌人：远程攻击有劣势。 */
+  private foeBesideCharacter(c: Character, fight: Fight5e | null): Monster5eState | null {
+    return fight?.monsters.find((m) => !m.defeated && !incapacitated(m.conditions) && sameSpot(m.spot, c.spot)) ?? null;
+  }
+
+  /** 怪物身边（同一个站位）还能动手的角色：怪物远程攻击有劣势。 */
+  private foeBesideMonster(m: Monster5eState, fight: Fight5e): Character | null {
+    return (
+      [...this.characters.values()].find(
+        (x) => !x.dead && x.location === fight.location && sameSpot(x.spot, m.spot) && !!x.v5 && !dying(x.v5) && !incapacitated(x.v5.conditions),
+      ) ?? null
+    );
+  }
+
+  protected override foesBeside(c: Character): { id: string; name: string }[] {
+    return (this.fightAt(c.location)?.monsters ?? [])
+      .filter((m) => !m.defeated && !incapacitated(m.conditions) && sameSpot(m.spot, c.spot))
+      .map((m) => ({ id: m.id, name: m.name }));
+  }
+
+  protected override freeHitHow(): string {
+    return '这是借机攻击：用 monster_action 结算（填 opportunity=true，算它的反应，不占它这一轮的回合），这一下近战照样打得到；角色先用了撤离的不招借机攻击。';
+  }
+
+  /** 敌人换站位（V1.0.x）：在这一局正在打的仗里找这个敌人（先找行动的人所在的地方）。 */
+  protected override setEnemySpot(input: Input): ToolResult {
+    const actor = this.characters.get(this.actorId);
+    const here = this.fightAt(actor?.location ?? null);
+    const fights = [here, ...Object.values(this.fights)].filter((f): f is Fight5e => !!f);
+    const m = fights.flatMap((f) => f.monsters).find((x) => x.id === input.enemy);
+    if (!m) {
+      const all = [...new Set(fights.flatMap((f) => f.monsters.map((x) => `${x.id}=${x.name}`)))];
+      throw new ToolError(`没有这个敌人：${String(input.enemy)}${all.length ? `，现在的敌人：${all.join('、')}` : '（这里没有在打仗）'}`);
+    }
+    const fight = fights.find((f) => f.monsters.includes(m))!;
+    const spot = matchSpot(this.scenario.locations.find((l) => l.key === fight.location), input.spot);
+    m.spot = spot;
+    this.worldChanged = true;
+    const beside = [...this.characters.values()].filter((x) => !x.dead && x.location === fight.location && sameSpot(x.spot, spot)).map((x) => x.name);
+    return ok({ enemy: `${m.id}=${m.name}`, spot: spotName(spot), beside });
   }
 
   // ==================== 检定 ====================
@@ -799,13 +864,19 @@ export class Rules5eContext extends ResolutionContext {
     const opt = this.attackOption(p, String(input.weapon ?? ''));
     const w = opt.weapon;
     const ref = `c${c.id}`;
-    const ac = this.monsterAc(m, input);
     const notes: string[] = [];
     const reason = text(input.reason, 60) || '攻击';
-    const melee = !w || !w.ranged;
+    // 站位（V1.0.x）：近战要和敌人站在一起；远程（弓弩、扔出去的投掷武器）打站在掩体里的 AC +2，身边有敌人时劣势
+    const thrown = input.thrown === true && !!w && w.properties.includes('thrown');
+    if (input.thrown === true && !thrown && !w?.ranged) notes.push(`${opt.name}不是投掷武器，按近战算`);
+    const melee = (!w || !w.ranged) && !thrown;
+    if (melee) this.reach(c, m);
+    const ac = this.monsterAc(m, input, melee ? 0 : this.spotCover(c.location, m.spot, input, m.name, notes));
     const strBased = opt.ability === 'str';
     // 优势、劣势
     const { adv, dis } = this.advFrom(input);
+    const foe = melee ? null : this.foeBesideCharacter(c, fight);
+    if (foe) dis.push(`身边有敌人（${foe.name}）`);
     const am = attackerMode(s.conditions, s.effects.filter((e) => !e.vs || e.vs === m.id), s.exhaustion);
     adv.push(...am.adv);
     dis.push(...am.dis);
@@ -1107,10 +1178,12 @@ export class Rules5eContext extends ResolutionContext {
     const data = this.mdata(m);
     const { a, group } = this.findAction(data, input.action);
     const reason = text(input.reason, 60) || a.name;
-    if (!this.monsterTurns.has(m.id)) {
+    if (input.opportunity === true && (a.multiattack || a.attack === null)) throw new ToolError('借机攻击只打一下：用它的一种攻击（多重攻击里的一种）');
+    const turnStarts = () => {
+      if (this.monsterTurns.has(m.id)) return;
       this.monsterTurns.add(m.id);
       this.expireTurnEffects(m.id);
-    }
+    };
     // 充能：用过的本事每次掷 d6 看回没回来；每日几次的数次数
     if (a.recharge) {
       if (m.spent.includes(a.name)) {
@@ -1126,11 +1199,32 @@ export class Rules5eContext extends ResolutionContext {
       if (used >= a.perDay) throw new ToolError(`${m.name}的「${a.name}」今天已经用了 ${used} 次`);
     }
     if (a.multiattack) {
+      turnStarts();
       this.acted(fight!, m.id);
       return ok({ enemy: m.name, action: a.name, desc: a.desc, note: '多重攻击：把里面写的攻击各调用一次 monster_action' });
     }
     const targetIds = Array.isArray(input.targets) ? input.targets : [];
     const targets = targetIds.map((id) => this.pc(id));
+    // 只打得到这场战斗所在地点的人
+    for (const t of targets) {
+      if (t.c.location !== fight!.location) throw new ToolError(`${t.c.name}不在${this.placeName(fight!.location)}，${m.name}打不到他`);
+    }
+    // 站位（V1.0.x）：近战的本事只打得到同一个站位上的角色（刚从它身边走开的，借机攻击照样打得到）
+    const canRanged = /远程|射程|\b(?:ranged|range)\b/i.test(a.desc);
+    const canMelee = !canRanged || /近战|触及|\b(?:melee|reach)\b/i.test(a.desc);
+    const free = new Set<number>();
+    if (a.attack !== null) {
+      for (const t of targets) {
+        if (!canMelee || sameSpot(m.spot, t.c.spot)) continue;
+        if (this.leftFoes.get(t.c.id)?.has(m.id)) free.add(t.c.id);
+        else if (!canRanged) {
+          throw new ToolError(`${m.name}（${m.id}）站在${spotName(m.spot)}，${t.c.name}在${spotName(t.c.spot)}：「${a.name}」是近战，够不着。先用 set_spot（enemy）让它走过去，或者换远程的本事`);
+        }
+      }
+    }
+    // 反应（借机攻击、数据块里的反应）不是它的回合：只打刚从它身边走开的人，也算借机攻击
+    const reaction = input.opportunity === true || group === 'reactions' || (targets.length > 0 && targets.every((t) => free.has(t.c.id)));
+    if (!reaction) turnStarts();
     const reactions = new Map<number, string>();
     for (const raw of Array.isArray(input.reactions) ? input.reactions : []) {
       const o = (raw && typeof raw === 'object' ? raw : {}) as Input;
@@ -1153,19 +1247,23 @@ export class Rules5eContext extends ResolutionContext {
       for (const t of targets) {
         const ref = `c${t.c.id}`;
         const beast = t.s.wildShape ? this.srd(t.s.wildShape) : null;
-        let ac = currentAc(t.s, t.sheet, this.rules, beast) + this.cover(input);
+        const melee = canMelee && (sameSpot(m.spot, t.c.spot) || free.has(t.c.id));
+        const spotNotes: string[] = [];
+        if (free.has(t.c.id) && this.takeFreeHit(t.c.id, m.id)) spotNotes.push(`${t.c.name}刚从${m.name}身边走开：这一下是借机攻击`);
+        let ac = currentAc(t.s, t.sheet, this.rules, beast) + Math.max(this.cover(input), melee ? 0 : this.spotCover(fight!.location, t.c.spot, input, t.c.name, spotNotes));
         const { adv, dis } = this.advFrom(input);
         const am = attackerMode(m.conditions, m.effects.filter((e) => !e.vs || e.vs === ref));
         adv.push(...am.adv);
         dis.push(...am.dis);
-        const melee = !/远程|射程|Ranged|range/.test(a.desc);
+        const foe = melee ? null : this.foeBesideMonster(m, fight!);
+        if (foe) dis.push(`身边有敌人（${foe.name}）`);
         const tm = targetMode(t.s.conditions, t.s.effects, melee, m.id);
         adv.push(...tm.adv);
         dis.push(...tm.dis);
         const r = d20Test({ label: a.name, bonus: a.attack, advantage: adv.length > 0, disadvantage: dis.length > 0, target: ac }, this.rng);
         m.effects = m.effects.filter((e) => !(e.once && (e.mods.disAttack || e.mods.advAttack)));
         let hit = !r.natural1 && (r.natural20 || r.total >= ac);
-        const notes: string[] = [];
+        const notes: string[] = [...spotNotes];
         // 护盾术：被打中时施放，AC +5
         if (hit && reactions.get(t.c.id) === 'shield' && !r.natural20) {
           const spell = this.rules.spells.find((x) => x.key === 'shield')!;
@@ -1265,9 +1363,9 @@ export class Rules5eContext extends ResolutionContext {
     }
     if (a.recharge) m.spent = [...new Set([...m.spent, a.name])];
     if (a.perDay) m.usedPerDay[a.name] = (m.usedPerDay[a.name] ?? 0) + 1;
-    if (fight && group !== 'reactions') this.acted(fight, m.id);
+    if (fight && !reaction) this.acted(fight, m.id);
     this.worldChanged = true;
-    return ok({ enemy: m.name, action: a.name, desc: a.desc, results, reason });
+    return ok({ enemy: m.name, action: a.name, desc: a.desc, results, reason, ...(reaction ? { reaction: '用的是它的反应，不占它这一轮的回合' } : {}) });
   }
 
   /** 角色受伤（统一走这里）：抗性、临时生命值、倒地、死亡、专注豁免、兽人的坚韧不屈、荒野变形。 */
@@ -1399,6 +1497,7 @@ export class Rules5eContext extends ResolutionContext {
       const list = sp ? [...sp.cantrips, ...sp.prepared].map((k) => `${this.rules.spells.find((x) => x.key === k)?.name ?? k}（${k}）`).join('、') : '';
       throw new ToolError(`${c.name}没有准备${spell.name}。${list ? `他能用的法术：${list}` : '他不会施法'}`);
     }
+    this.touchReach(c, spell, input);
     // 没说用什么：有免费次数（猎人印记、血统法术、魔能祈唤……）、又没指定环级的，先用免费的
     const slot = Number.isInteger(input.slot) ? (input.slot as number) : null;
     const mode =
@@ -1435,6 +1534,16 @@ export class Rules5eContext extends ResolutionContext {
       slots_left: slotSummary(s, sheet) || '没有法术位',
       reason,
     });
+  }
+
+  /** 站位（V1.0.x）：近战法术攻击（冻寒之触、电爪、吸血鬼之触、焰刃）只打得到身边的敌人；灵体武器是飘过去打的，不算。 */
+  private touchReach(c: Character, spell: SpellData, input: Input) {
+    if (spell.mech?.attack !== 'melee' || spell.key === 'spiritual-weapon') return;
+    const fight = this.fightAt(c.location);
+    for (const id of Array.isArray(input.enemies) ? input.enemies : []) {
+      const m = fight?.monsters.find((x) => x.id === id);
+      if (m && !m.defeated) this.reach(c, m, spell.name);
+    }
   }
 
   /** 照法术的机制结算一次（施放时，或者 spell_effect 再生效时）。 */
@@ -1512,7 +1621,11 @@ export class Rules5eContext extends ResolutionContext {
         const tm = targetMode(m.conditions, m.effects, mech.attack === 'melee', `c${c.id}`);
         adv.push(...tm.adv);
         dis.push(...tm.dis);
-        const ac = this.monsterAc(m, input);
+        // 站位（V1.0.x）：远程法术攻击打站在掩体里的 AC +2，施法的人身边有敌人时劣势
+        const ranged = mech.attack === 'ranged';
+        const foe = ranged ? this.foeBesideCharacter(c, this.fightAt(c.location)) : null;
+        if (foe) dis.push(`身边有敌人（${foe.name}）`);
+        const ac = this.monsterAc(m, input, ranged ? this.spotCover(c.location, m.spot, input, m.name, notes) : 0);
         const r = d20Test({ label: '法术攻击', bonus: attackBonus, extras: this.effectDice(s, 'attackDice', m.id), advantage: adv.length > 0, disadvantage: dis.length > 0, exhaustion: s.exhaustion, target: ac }, this.rng);
         this.usedAttackBoosts(s, m);
         const hit = !r.natural1 && (r.natural20 || r.total >= ac);
@@ -1690,6 +1803,7 @@ export class Rules5eContext extends ResolutionContext {
     const active = conc?.spell === key || (!spell.concentration && REPEATABLE_SPELLS.has(key));
     if (!active) throw new ToolError(`${c.name}现在没有在维持${spell.name}${conc ? `（他专注的是${conc.name}）` : ''}：要先 cast_spell`);
     const level = conc?.spell === key ? (conc.level ?? spell.level) : spell.level;
+    this.touchReach(c, spell, input);
     const r = this.resolveSpell(p, { ...spell, mech: spell.mech ? { ...spell.mech, effect: undefined } : null }, level, input);
     return ok({ character: c.name, spell: spell.name, level, results: r.results, ...(r.notes.length ? { notes: r.notes } : {}) });
   }
@@ -2093,6 +2207,7 @@ export class Rules5eContext extends ResolutionContext {
     if (m.defeated) throw new ToolError(`${m.name}已经倒下了`);
     const { a } = this.findAction(beast, actionName || '1');
     if (a.attack === null) throw new ToolError(`${beast.name}的「${a.name}」不是攻击`);
+    this.reach(c, m);
     const { adv, dis } = this.advFrom(input);
     const am = attackerMode(s.conditions, s.effects.filter((e) => !e.vs || e.vs === m.id));
     adv.push(...am.adv);
@@ -2305,6 +2420,9 @@ export class Rules5eContext extends ResolutionContext {
       }
     }
     if (fight.monsters.length + added.length > 16) throw new ToolError('一场战斗里最多 16 个怪物');
+    // 站位（V1.0.x）：怪物出现在哪
+    const spot = matchSpot(this.scenario.locations.find((l) => l.key === location), input.spot);
+    if (spot) for (const m of added) m.spot = spot;
     fight.monsters.push(...added);
     for (const m of added) {
       const d = this.mdata(m);
@@ -2345,7 +2463,7 @@ export class Rules5eContext extends ResolutionContext {
       order: fight.order.map((o) => `${o.name}（${o.side === 'ally' ? '角色' : o.id}）${o.initiative}`),
       monsters: fight.monsters.map((m) => {
         const d = this.mdata(m);
-        return { id: m.id, name: m.name, hp: `${m.hp}/${m.hpMax}`, ac: m.ac, actions: d.actions.map((a) => a.name), ...(m.defeated ? { defeated: true } : {}) };
+        return { id: m.id, name: m.name, hp: `${m.hp}/${m.hpMax}`, ac: m.ac, actions: d.actions.map((a) => a.name), spot: spotName(m.spot), ...(m.defeated ? { defeated: true } : {}) };
       }),
       ...(lines.length ? { notes: lines } : {}),
       this_turn: `这次结算就是${actor.name}这一轮的回合：开打前做的事算在里面，他还可以接着做这一回合的动作（攻击、施法……）。${turnLine(fight, [...this.characters.values()], actor)}`,

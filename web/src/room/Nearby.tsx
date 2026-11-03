@@ -1,20 +1,30 @@
 import { useState } from 'react';
 import { api, errorMessage, type GameState, type NearbyCharacter } from '../api';
+import { sameSpot, spotName, viewFlagText } from '../../../shared/spots';
 
 // 故事下面、输入框上面的“在场的人”：和你在同一个地点的角色，他们交了还没出结果的行动，可以点「协助」。
+// 站位（V1.0.x）：有人站在特别的地方时，写出你站在哪、每个人在不在你身边（身边的人排在前面）。
 
 export function Nearby({ roomId, game, onChanged }: { roomId: number; game: GameState; onChanged: () => void }) {
   const [open, setOpen] = useState(true);
   const me = game.me;
   if (!me || me.dead || !me.location) return null;
   const busyCount = game.nearby.filter((n) => n.action).length;
+  // 和你在一起的 AI 队友（V1.1.0）：对白它们也听得到
+  const ai = game.nearbyCompanions ?? [];
+  const names = [...game.nearby.map((n) => n.name), ...ai.map((c) => c.name)];
+  const spotted = !!me.spot || game.nearby.some((n) => n.spot);
+  const rows = spotted
+    ? [...game.nearby.filter((n) => sameSpot(n.spot, me.spot)), ...game.nearby.filter((n) => !sameSpot(n.spot, me.spot))]
+    : game.nearby;
+  const flags = viewFlagText(me.location, me.spot);
   return (
     <section className="nearby" aria-labelledby="nearby-title">
       <button type="button" className="nearby-head" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
         <span id="nearby-title">
           在{me.location.name}的人
           <span className="muted">
-            {game.nearby.length ? `：${game.nearby.map((n) => n.name).join('、')}` : '：只有你'}
+            {names.length ? `：${names.join('、')}` : '：只有你'}
             {busyCount > 0 && `，${busyCount} 个在等结果`}
           </span>
         </span>
@@ -22,10 +32,32 @@ export function Nearby({ roomId, game, onChanged }: { roomId: number; game: Game
           <path d="M4 6l4 4 4-4" />
         </svg>
       </button>
-      {open && game.nearby.length > 0 && (
+      {open && spotted && (
+        <p className="nearby-spot">
+          你站在{spotName(me.spot)}
+          {flags && <span className="chip">{flags}</span>}
+        </p>
+      )}
+      {open && names.length > 0 && (
         <ul className="nearby-list">
-          {game.nearby.map((n) => (
-            <NearbyRow key={n.id} roomId={roomId} person={n} pet={game.others.find((o) => o.id === n.id)?.petName ?? null} onChanged={onChanged} />
+          {rows.map((n) => (
+            <NearbyRow
+              key={n.id}
+              roomId={roomId}
+              person={n}
+              pet={game.others.find((o) => o.id === n.id)?.petName ?? null}
+              where={spotted ? (sameSpot(n.spot, me.spot) ? '在你身边' : `站在${spotName(n.spot)}`) : null}
+              onChanged={onChanged}
+            />
+          ))}
+          {ai.map((c) => (
+            <li key={`ai-${c.roleKey}`} className="nearby-row nearby-ai">
+              <p className="nearby-who">
+                <strong>{c.name}</strong>
+                <span className="muted">{c.roleName}</span>
+              </p>
+              <p className="nearby-action">{c.persona ? <span className="tag persona-tag">AI 角色</span> : <span className="tag ai-tag">AI</span>}</p>
+            </li>
           ))}
         </ul>
       )}
@@ -33,7 +65,20 @@ export function Nearby({ roomId, game, onChanged }: { roomId: number; game: Game
   );
 }
 
-function NearbyRow({ roomId, person, pet, onChanged }: { roomId: number; person: NearbyCharacter; pet: string | null; onChanged: () => void }) {
+function NearbyRow({
+  roomId,
+  person,
+  pet,
+  where,
+  onChanged,
+}: {
+  roomId: number;
+  person: NearbyCharacter;
+  pet: string | null;
+  /** 站位：「在你身边」「站在窗边」；没人站在特别的地方时是 null。 */
+  where: string | null;
+  onChanged: () => void;
+}) {
   const [assisting, setAssisting] = useState(false);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
@@ -62,6 +107,7 @@ function NearbyRow({ roomId, person, pet, onChanged }: { roomId: number; person:
         <strong>{person.name}</strong>
         <span className="muted">{person.roleName}</span>
         {pet && <span className="muted">带着宠物「{pet}」</span>}
+        {where && <span className={where === '在你身边' ? 'nearby-where is-beside' : 'nearby-where'}>{where}</span>}
       </p>
       {a ? (
         <div className="nearby-action">

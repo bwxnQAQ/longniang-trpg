@@ -1,4 +1,5 @@
-import type { Character2View, DungeonView, GearView, LootView } from '../api';
+import type { Character2View, DungeonView, GearView, LootView, PlaceInfo } from '../api';
+import { SpotGroups } from './SpotGroups';
 import { checkBonuses, gearEffectText, gearTotals } from '../../../shared/gear2';
 import { ATTRIBUTE2_NAME, ATTRIBUTES2, CONSUMABLES, EQUIP_SLOT_PART, EQUIP_SLOTS, GEAR_PART_LABEL, RARITY_LABEL, SIZE_LABEL, TIER_LABEL, type Attributes2 } from '../../../shared/rules2';
 import { sign } from '../format';
@@ -187,8 +188,8 @@ export function DungeonBadge({ dungeon }: { dungeon: DungeonView }) {
   );
 }
 
-/** 和自己在同一个地点正在打的仗：先后手、敌人还剩多少生命。 */
-export function CombatPanel({ dungeon }: { dungeon: DungeonView }) {
+/** 和自己在同一个地点正在打的仗：先后手、谁站在哪、敌人还剩多少生命。 */
+export function CombatPanel({ dungeon, place }: { dungeon: DungeonView; place: PlaceInfo | null }) {
   const combat = dungeon.combat;
   if (!combat) return null;
   return (
@@ -202,6 +203,7 @@ export function CombatPanel({ dungeon }: { dungeon: DungeonView }) {
           </li>
         ))}
       </ol>
+      <SpotGroups people={combat.order} place={place} />
       <ul className="combat-enemies">
         {combat.enemies.map((e) => (
           <li key={e.id} className={e.defeated ? 'is-down' : ''}>

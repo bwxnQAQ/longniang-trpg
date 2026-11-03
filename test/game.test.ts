@@ -326,7 +326,8 @@ test('回合模式：在线时提交行动，估时后马上结算；掷骰、�
   const state = await game(roomId, 'tester2');
   assert.equal(state.myAction, null);
   assert.equal(state.me.location.key, 'cellar');
-  assert.deepEqual(state.me.visited.map((p: any) => p.key).sort(), ['cellar', 'lobby']);
+  // 地图（V1.0.x）：从大堂去地窖要穿过后厨，路过的地方也算去过
+  assert.deepEqual(state.me.visited.map((p: any) => p.key).sort(), ['cellar', 'kitchen', 'lobby']);
   assert.deepEqual(state.clues.map((c: any) => c.key), ['head-wound']);
   assert.ok(state.clues[0].content.includes('凹陷'));
   assert.equal(Math.round(state.clock.minutes), 22 * 60 + 20, '回合模式下游戏时间按行动耗时往前跳');
@@ -338,7 +339,7 @@ test('回合模式：在线时提交行动，估时后马上结算；掷骰、�
   assert.equal(narration.data.rolls[0].total, 13); // 5+6 + 智识2
   assert.equal(narration.data.rolls[0].outcome, 'success');
   assert.deepEqual(narration.data.clues, [{ key: 'head-wound', title: '后脑的伤' }]);
-  assert.ok(narration.data.changes.includes('来到：地窖'));
+  assert.ok(narration.data.changes.includes('来到：地窖（路过后厨和后院）'));
   await stream.waitFor((e) => e.event === 'log' && e.data.data?.type === 'resolution');
 
   // 发给主持AI的请求：规则和剧本走1小时缓存，工具都在，行动内容在最后
@@ -348,7 +349,7 @@ test('回合模式：在线时提交行动，估时后马上结算；掷骰、�
   assert.ok(dm.system?.[1].text.includes('"truth"'));
   assert.deepEqual(
     dm.tools!.map((x) => x.name).sort(),
-    ['end_game', 'give_clue', 'move_character', 'private_message', 'roll_check', 'roll_opposed', 'trigger_event', 'update_character', 'update_npc'],
+    ['end_game', 'give_clue', 'move_character', 'noise', 'private_message', 'reveal_exit', 'roll_check', 'roll_opposed', 'set_spot', 'trigger_event', 'update_character', 'update_npc'],
   );
   assert.ok(lastUserText(dm).includes('我去地窖仔细检查周墨后脑的伤口'));
   const second = fake.requests.filter((r) => r.tools?.length)[1];

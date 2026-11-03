@@ -114,7 +114,8 @@ test('走到别处：留在原地的人只看得见他从哪个出口走的（�
   });
   const moved = (to: string) => {
     const ctx = new ResolutionContext({ scenario, world: emptyWorld(), characters: [character(1), character(2)], clueHolders: new Map(), actorId: 1, gameEnd: 1400, rng: () => 3 });
-    assert.equal(ctx.execute('move_character', { character: 1, location: to }).isError, false);
+    // 地图上没有路的（V1.0.x）要写怎么去的
+    assert.equal(ctx.execute('move_character', { character: 1, location: to, ...(to === 'hidden-room' ? { via: '从墙上的暗门钻进去' } : {}) }).isError, false);
     return ctx.leftBehind();
   };
   assert.deepEqual(moved('kitchen'), { ids: [2], from: '大堂', to: '后厨和后院', far: false });

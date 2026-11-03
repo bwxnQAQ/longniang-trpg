@@ -1,0 +1,369 @@
+/* ---------- AI 大厅（V1.1.0）：每个 AI 角色像一张名帖 ---------- */
+/* 名帖：纸面上压一道细框（像印出来的拜帖），左上角是青花蓝的虚线圈和名字的第一个字（和对局里 AI 队友的头像一样）。
+   名字、简介、人设用宋体，像在读名帖上的字；不公开的名帖框线是虚的。 */
+
+:root {
+  --porcelain: #2e5aac;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --porcelain: #8aabf0;
+  }
+}
+
+.ai-hall .page-head {
+  align-items: center;
+}
+
+.persona-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin: 0 0 18px;
+}
+
+.persona-tools input[type='search'] {
+  flex: 0 1 300px;
+  min-width: 0;
+}
+
+.persona-sort {
+  display: inline-flex;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.persona-sort-option {
+  min-height: 36px;
+  padding: 4px 14px;
+  border: 0;
+  background: var(--field);
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.persona-sort-option + .persona-sort-option {
+  border-left: 1px solid var(--rule-strong);
+}
+
+.persona-sort-option[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.persona-sort-option:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+
+.persona-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.persona-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.persona-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 18px 20px 16px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  background: var(--field);
+  /* 里面再压一道细框 */
+  box-shadow:
+    inset 0 0 0 4px var(--field),
+    inset 0 0 0 5px var(--rule);
+}
+
+.persona-card.is-private {
+  border-style: dashed;
+}
+
+.persona-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.persona-mark {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border: 1.5px dashed var(--porcelain);
+  border-radius: 50%;
+  color: var(--porcelain);
+  font-family: var(--font-story);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.persona-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.persona-name {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--font-story);
+  font-size: 21px;
+  letter-spacing: 0.04em;
+  line-height: 1.35;
+}
+
+.persona-by {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 6px;
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.persona-by a {
+  color: var(--ink-soft);
+}
+
+.persona-invites::before {
+  content: '·';
+  margin-right: 6px;
+}
+
+.persona-state {
+  flex: none;
+}
+
+.persona-state.is-public {
+  border-color: var(--porcelain);
+  color: var(--porcelain);
+}
+
+.persona-intro {
+  margin: 12px 0 0;
+  color: var(--ink-soft);
+  font-family: var(--font-story);
+  font-size: 15.5px;
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+
+.persona-prompt {
+  max-height: 360px;
+  margin: 12px 0 0;
+  padding: 10px 14px;
+  overflow: auto;
+  border-left: 3px solid var(--porcelain);
+  background: var(--paper-2);
+  font-family: var(--font-story);
+  font-size: 14.5px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.persona-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin-top: auto;
+  padding-top: 14px;
+}
+
+.persona-actions-end {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.persona-report {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.persona-more {
+  margin: 20px 0 0;
+  text-align: center;
+}
+
+/* 新建、编辑 */
+.persona-form {
+  max-width: 640px;
+}
+
+.persona-form textarea {
+  font-family: var(--font-story);
+  font-size: 15px;
+}
+
+.persona-count {
+  margin-left: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.persona-count.is-over {
+  color: var(--seal);
+}
+
+/* 请进对局：自己的对局和里面没人选的身份 */
+.invite-room-list,
+.invite-role-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.invite-room + .invite-room {
+  margin-top: 18px;
+}
+
+.invite-room-name {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  margin: 0 0 6px;
+  font-weight: 600;
+}
+
+.invite-room-name .muted {
+  font-weight: 400;
+}
+
+.invite-role {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid var(--rule);
+}
+
+.invite-role-text {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 10px;
+  min-width: 0;
+}
+
+.invite-role-public {
+  flex-basis: 100%;
+  color: var(--ink-soft);
+  font-size: 13.5px;
+}
+
+.invite-done {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.invite-done p {
+  margin: 0;
+}
+
+/* ---------- 对局里 ---------- */
+
+/* 记录里和这个行动一起结算的 AI 角色的行动：名字（AI 小标记）跟着它交的那句话 */
+.turn-companion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  margin: 0;
+}
+
+.turn-companion-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--porcelain);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.turn-companion .turn-action {
+  margin: 0;
+}
+
+/* 开团准备：交给 AI 演的身份请谁来演 */
+.ai-seat-persona {
+  display: flex;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  min-width: 0;
+}
+
+.ai-seat-persona select {
+  flex: 1 1 200px;
+  width: auto;
+  min-width: 0;
+  min-height: 32px;
+  padding: 3px 8px;
+}
+
+.ai-seat-intro {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13.5px;
+}
+
+.ai-seat-intro .muted {
+  margin-left: 6px;
+}
+
+.tag.persona-tag {
+  border-style: dashed;
+  border-color: var(--porcelain);
+  color: var(--porcelain);
+}
+
+/* 在场的人：和你在一起的 AI 队友 */
+.nearby-ai .nearby-action {
+  flex-direction: row;
+  align-items: center;
+  align-self: center;
+}
+
+/* 管理页：举报的 AI 角色，人设分行显示 */
+.report-persona {
+  white-space: pre-wrap;
+}
+
+@media (max-width: 600px) {
+  .persona-card {
+    padding: 16px 16px 14px;
+  }
+
+  .persona-actions-end {
+    margin-left: 0;
+  }
+
+  .invite-role {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

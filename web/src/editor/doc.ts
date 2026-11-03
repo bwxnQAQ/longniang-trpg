@@ -360,7 +360,22 @@ export function newRole(doc: Obj): Obj {
   return { ...base, attributes: mode === 'rules2' ? defaultAttributes2() : defaultAttributes1(), specialties: ['', ''], appearance: '' };
 }
 
-export const newLocation = (doc: Obj): Obj => ({ key: nextKey(doc.locations, 'place'), name: '', description: '', exits: [], features: [] });
+/**
+ * 新地点。别的地点都摆好了地图上的位置的，新的也给一个（离别的地点最远的空地方），免得只有它没位置。
+ */
+export function newLocation(doc: Obj): Obj {
+  const base = { key: nextKey(doc.locations, 'place'), name: '', description: '', exits: [], features: [] };
+  const placed = asList(doc.locations).filter(isObj);
+  if (!placed.length || !placed.every((l) => typeof l.x === 'number' && typeof l.y === 'number')) return base;
+  let best = { x: 50, y: 50, gap: -1 };
+  for (let x = 10; x <= 90; x += 10) {
+    for (let y = 10; y <= 90; y += 10) {
+      const gap = Math.min(...placed.map((l) => Math.hypot((l.x as number) - x, (l.y as number) - y)));
+      if (gap > best.gap) best = { x, y, gap };
+    }
+  }
+  return { ...base, x: best.x, y: best.y };
+}
 
 export const newNpc = (doc: Obj): Obj => ({
   key: nextKey(doc.npcs, 'npc'),

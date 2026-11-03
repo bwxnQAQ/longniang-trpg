@@ -477,6 +477,24 @@ button.ed-check-status[aria-expanded='false']::after {
   min-width: 0;
 }
 
+/* 站位（V1.0.x）：名字 + 属性的勾选；整个地点的属性在最上面 */
+.ed-spot > input {
+  flex: 1 1 9em;
+  min-width: 0;
+}
+
+.ed-spot-flags,
+.ed-spot-place {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  font-size: 13px;
+}
+
+.ed-spot-place {
+  margin-bottom: 6px;
+}
+
 .ed-minutes {
   display: inline-flex;
   flex: none;

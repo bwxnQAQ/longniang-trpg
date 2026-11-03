@@ -110,6 +110,27 @@
   font-size: 15px;
 }
 
+/* 站位（V1.0.x）：你站在哪、每个人在不在你身边 */
+.nearby-spot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin: 0 0 6px;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.nearby-where {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.nearby-where.is-beside {
+  color: var(--gold-deep);
+  font-weight: 600;
+}
+
 .nearby-action {
   display: flex;
   flex-direction: column;

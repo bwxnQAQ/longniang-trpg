@@ -12,6 +12,7 @@ export type * from '../../shared/review';
 export type * from '../../shared/announce';
 export type * from '../../shared/cards';
 export type * from '../../shared/groups';
+export type * from '../../shared/personas';
 export type { GearView } from '../../shared/gear2';
 import type { AiReviewView } from '../../shared/review';
 import type { HallScenario } from '../../shared/works';
@@ -19,6 +20,7 @@ import type { AdminPetSummary, PublicPet } from '../../shared/pets';
 import type { ProfileCollection } from '../../shared/achievements';
 import type { PublicCard } from '../../shared/cards';
 import type { PublicCard5e } from '../../shared/5e/types';
+import type { MapView } from '../../shared/map';
 export type { AdminPermission, Identity } from '../../shared/admin';
 export { ADMIN_PERMISSIONS, IDENTITY_LABEL, PERMISSION_LABEL } from '../../shared/admin';
 
@@ -189,7 +191,7 @@ export type LobbyMessage = { id: number; user: UserBrief; title: string | null; 
 export type ReportKind = 'report' | 'feedback' | 'bug';
 
 /** 举报的是哪条内容（V0.7.0 去掉了宠物留言）。 */
-export type ReportTarget = { type: 'lobby' | 'dm' | 'room' | 'rating' | 'feedback' | 'group'; id: number };
+export type ReportTarget = { type: 'lobby' | 'dm' | 'room' | 'rating' | 'feedback' | 'group' | 'persona'; id: number };
 
 export type MyReport = {
   id: number;
@@ -595,6 +597,8 @@ export type AdminRoomDetail = {
     conditions: Condition[];
     items: string[];
     locationName: string | null;
+    /** 站位（V1.0.x）：null 是在大家中间。 */
+    spot: string | null;
     visitedNames: string[];
     dead: boolean;
   }[];
@@ -602,6 +606,8 @@ export type AdminRoomDetail = {
   companions: { roleKey: string; roleName: string; name: string; npcKey: string }[];
   scenario: { source: string; key: string | null; revealed: boolean; data: Record<string, any> } | null;
   world: { npcs: Record<string, any>; events: Record<string, { happened: boolean; note: string; at: number }>; ending: { title: string; epilogue: string } | null };
+  /** 整张地图（V1.0.x）：所有角色、AI 队友和 NPC 在哪。 */
+  map: MapView | null;
   storySummary: { text: string; untilLogId: number };
   actions: {
     id: number;
@@ -683,6 +689,8 @@ export const PURPOSE_LABEL: Record<string, string> = {
   summary: '摘要和笔记',
   scenario: '写剧本',
   moderation: '内容检查',
+  // AI 角色每一轮交的行动（V1.1.0）
+  companion: 'AI 角色的行动',
 };
 
 /** 模型的名字（选项里有就用选项里的）。 */

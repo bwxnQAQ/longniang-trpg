@@ -736,9 +736,17 @@ export function registerSocialRoutes(router: Router, deps: Deps) {
       const t = o.target === undefined ? null : asObject(o.target);
       if (t) {
         // V0.7.0 去掉了宠物留言：以前的举报（pet_note）管理页照样看得到，新的不收
-        const type = asOneOf(t.type, ['lobby', 'dm', 'room', 'rating', 'feedback', 'group'] as const, '请求格式不对');
+        const type = asOneOf(t.type, ['lobby', 'dm', 'room', 'rating', 'feedback', 'group', 'persona'] as const, '请求格式不对');
         const id = typeof t.id === 'number' && Number.isInteger(t.id) && t.id > 0 ? t.id : 0;
-        if (type === 'group') {
+        if (type === 'persona') {
+          // AI 大厅里公开的 AI 角色（V1.1.0）：名字、简介、人设一起附上
+          const p = db.prepare('SELECT user_id, name, intro, prompt, public FROM ai_personas WHERE id = ?').get(id) as
+            | { user_id: number; name: string; intro: string; prompt: string; public: number }
+            | undefined;
+          if (!p || p.public !== 1) throw new HttpError(404, '没有这个 AI 角色');
+          targetUser = p.user_id;
+          target = { type, id, name: p.name, text: `名字：${p.name}\n简介：${p.intro || '（没写）'}\n人设：\n${p.prompt}` };
+        } else if (type === 'group') {
           // 群聊里别人发的消息（V0.7.0）：自己在这个群里才能举报
           const m = groups.messageForReport(id, user.id);
           if (!m) throw new HttpError(404, '没有这条消息');

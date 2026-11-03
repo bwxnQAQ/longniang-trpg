@@ -1,12 +1,20 @@
-import { useEffect, useState, type FormEvent, type KeyboardEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { api, errorMessage, type GameState, type LogEntry, type MyAction, type RoomStatus } from '../api';
 import { formatDuration } from '../../../shared/game';
+import { sameSpot } from '../../../shared/spots';
 import { clockTime, formatRemaining, useNow } from './time';
 
 // 故事下面的输入框：「行动」交给主持人（以「？」开头是问主持人），「对白」是角色当面说的话，同一地点的人马上看到。
 // 场外聊天在右边的「聊天」里（ChatComposer）。
 
 type Mode = 'action' | 'say';
+
+/** 别的地方（地图页签的「写成行动」）把一段行动填进输入框：发这个事件，detail 是要填的字。 */
+export const COMPOSER_FILL = 'composer-fill';
+
+export function fillComposer(text: string) {
+  window.dispatchEvent(new CustomEvent(COMPOSER_FILL, { detail: text }));
+}
 
 const QUESTION = /^[?？]/;
 
@@ -41,13 +49,34 @@ export function Composer({
 
   const text = drafts[mode];
   const setText = (value: string) => setDrafts((d) => ({ ...d, [mode]: value }));
+  const area = useRef<HTMLTextAreaElement>(null);
+  // 地图上点了「写成行动」：切到「行动」，填进去（已经写了字的接在下一行），光标放到最后
+  useEffect(() => {
+    function onFill(e: Event) {
+      const value = (e as CustomEvent<string>).detail;
+      if (typeof value !== 'string' || !value) return;
+      setMode('action');
+      setDrafts((d) => ({ ...d, action: d.action.trim() ? `${d.action.trimEnd()}\n${value}` : value }));
+      requestAnimationFrame(() => {
+        const el = area.current;
+        if (!el || el.disabled) return;
+        el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        el.focus({ preventScroll: true });
+        el.setSelectionRange(el.value.length, el.value.length);
+      });
+    }
+    window.addEventListener(COMPOSER_FILL, onFill);
+    return () => window.removeEventListener(COMPOSER_FILL, onFill);
+  }, []);
   const myAction = game.myAction;
   const me = game.me;
-  const here = game.nearby;
+  // 悄悄话只能说给身边的人（同一个站位的，V1.0.x）
+  const mySpot = me?.spot ?? null;
+  const beside = useMemo(() => game.nearby.filter((c) => sameSpot(c.spot, mySpot)), [game.nearby, mySpot]);
   // 悄悄话的对象走开了：改回说给大家
   useEffect(() => {
-    if (to !== null && !here.some((c) => c.id === to)) setTo(null);
-  }, [here, to]);
+    if (to !== null && !beside.some((c) => c.id === to)) setTo(null);
+  }, [beside, to]);
 
   // 已经有行动在等结果：这时候写的都当成问主持人的问题
   const questionOnly = mode === 'action' && !!myAction;
@@ -154,7 +183,7 @@ export function Composer({
             <span>说给</span>
             <select value={to ?? ''} onChange={(e) => setTo(e.target.value ? Number(e.target.value) : null)}>
               <option value="">在场的所有人</option>
-              {here.map((c) => (
+              {beside.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}（悄悄话）
                 </option>
@@ -186,6 +215,7 @@ export function Composer({
         {mode === 'say' ? '对白' : '行动'}
       </label>
       <textarea
+        ref={area}
         id="composer-text"
         rows={mode === 'action' && !asQuestion ? 3 : 2}
         maxLength={mode === 'say' ? 300 : 500}
@@ -198,7 +228,7 @@ export function Composer({
       />
       <div className="composer-foot">
         <span className="hint" id="composer-hint">
-          {mode === 'say' ? (here.length === 0 ? '这里只有你一个人。' : '') : asQuestion ? '' : roundStatus(game, names)}
+          {mode === 'say' ? (game.nearby.length === 0 && game.nearbyCompanions.length === 0 ? '这里只有你一个人。' : '') : asQuestion ? '' : roundStatus(game, names)}
         </span>
         <span className="composer-buttons">
           {mode === 'action' && !asQuestion && !disabledReason && me?.petHelp === 'ready' && me.pet && (

@@ -6,7 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { openDatabase } from '../server/db';
-import { postReleaseNotes, RELEASE_NOTES } from '../server/release-notes';
+import { compareVersions, postReleaseNotes, RELEASE_NOTES } from '../server/release-notes';
 import { seedTestData } from '../server/seed-data';
 import { APP_VERSION } from '../server/version';
 import { BEFORE_WIPE } from './helpers';
@@ -15,10 +15,11 @@ const ROOT = path.resolve(import.meta.dirname, '..');
 const read = (...p: string[]) => fs.readFileSync(path.join(ROOT, ...p), 'utf8');
 
 test('V1.0.2：版本号；更新公告只写正文区域变大了', () => {
-  assert.equal(JSON.parse(read('package.json')).version, '1.0.2');
-  assert.equal(APP_VERSION, '1.0.2');
+  // 之后的版本（V1.1.0 起）版本号往上走，这一条公告还在
+  assert.ok(compareVersions(JSON.parse(read('package.json')).version, '1.0.2') >= 0);
+  assert.ok(compareVersions(APP_VERSION, '1.0.2') >= 0);
   const note = RELEASE_NOTES.find((n) => n.version === '1.0.2')!;
-  assert.equal(RELEASE_NOTES[0], note, '最新的在最前面');
+  assert.equal(RELEASE_NOTES[RELEASE_NOTES.findIndex((n) => n.version === '1.0.1') - 1], note, '新的在前面');
   assert.equal(note.title, 'V1.0.2 更新了什么');
   assert.match(note.body, /正文区域变大了/);
   assert.doesNotMatch(note.body, /DeepSeek|Claude|ChatGPT|GPT|OpenAI|中转站|管理|站长|额度/);

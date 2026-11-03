@@ -78,7 +78,7 @@ export function fight5eView(world: World, me: Character | null, characters: Char
     order: f.order.map((o) => {
       const c = o.side === 'ally' ? characters.find((x) => `c${x.id}` === o.id) : null;
       const m = o.side === 'enemy' ? f.monsters.find((x) => x.id === o.id) : null;
-      return { name: o.name, side: o.side, initiative: o.initiative, acted: f.acted.includes(o.id), down: c ? c.dead || c.v5?.hp === 0 : !!m?.defeated };
+      return { name: o.name, side: o.side, initiative: o.initiative, acted: f.acted.includes(o.id), down: c ? c.dead || c.v5?.hp === 0 : !!m?.defeated, spot: (c ? c.spot : m?.spot) ?? null };
     }),
     monsters: f.monsters.map((m) => ({
       id: m.id,
@@ -88,6 +88,7 @@ export function fight5eView(world: World, me: Character | null, characters: Char
       conditions: m.conditions.map((c) => CONDITION_NAME[c.key]),
       defeated: m.defeated,
       ...(m.fled ? { fled: true } : {}),
+      spot: m.spot ?? null,
     })),
   };
 }

@@ -150,6 +150,23 @@ function check(schema: Schema, value: unknown, at = '$'): string[] {
   return [];
 }
 
+/**
+ * 出口的 hidden（V1.0.x 暗道）、地点的站位和属性（V1.0.x 站位）：剧本文件里不写就是没有（false、空列表），
+ * AI 的输出格式里每一项都要写：对输出格式之前补上。
+ */
+function withExitFlags<T extends Record<string, any>>(data: T): T {
+  return {
+    ...data,
+    locations: (data.locations ?? []).map((l: any) => ({
+      noisy: false,
+      dark: false,
+      ...l,
+      spots: (l.spots ?? []).map((x: any) => ({ noisy: false, dark: false, cover: false, ...x })),
+      exits: (l.exits ?? []).map((e: any) => ({ hidden: false, ...e })),
+    })),
+  };
+}
+
 /** 结构化输出的限制：不支持长度、个数、数值范围；对象都要 additionalProperties: false；可选字段、联合类型有上限。 */
 function limits(schema: Schema) {
   let unions = 0;
@@ -174,7 +191,7 @@ function limits(schema: Schema) {
 test('生成剧本的输出格式：自带的《青溪灯夜》（规则第二版）正好符合；没用结构化输出不支持的写法', () => {
   const qingxi = JSON.parse(fs.readFileSync(path.join(dir, 'qingxi-lantern-night.json'), 'utf8'));
   const { category: _c, author: _a, ...written } = qingxi;
-  assert.deepEqual(check(SCENARIO_SCHEMA, { enemies: [], ...written }), []);
+  assert.deepEqual(check(SCENARIO_SCHEMA, { enemies: [], ...withExitFlags(written) }), []);
   for (const schema of [SCENARIO_SCHEMA, OUTLINE_SCHEMA, DUNGEON_SCHEMA]) {
     const { unions, optional, forbidden } = limits(schema);
     assert.deepEqual(forbidden, []);
@@ -236,7 +253,7 @@ test('自带的剧本是写好的十六个：五个分区各两个、五个地�
     // 分区、作者是程序填的（生成剧本时按房主选的分区，投稿时记作者），不在 AI 的输出格式里；
     // 敌人的 tweak（微调数值）是手写剧本才用的，AI 生成的不写
     const { category, author, enemies, ...rest } = data;
-    const written = { ...rest, enemies: ((enemies ?? []) as Record<string, unknown>[]).map(({ tweak: _tweak, ...e }) => e) };
+    const written = withExitFlags({ ...rest, enemies: ((enemies ?? []) as Record<string, unknown>[]).map(({ tweak: _tweak, ...e }) => e) });
     assert.ok(category && author === '龙娘跑团' && data.intro, `${f} 写了分区、简介，作者是龙娘跑团`);
     assert.ok(BUILTIN_BY_CATEGORY[category]?.includes(f), `${f} 在「${category}」分区`);
     if (category === 'dungeon') {

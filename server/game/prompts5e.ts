@@ -1,10 +1,11 @@
 // 5E 规则（V0.9.0）给主持 AI 的提示词：主持规则里换掉的两段、怪物数据块、角色、正在打的仗、场外问答的规则摘要。
 // 固定的部分放进系统提示词（能吃缓存），每次变化的放进这次结算的状态里。
+import { spotName } from '../../shared/spots';
 import { ABILITIES, ABILITY_NAME, CONDITION_NAME, DAMAGE_NAME, SKILL_KEYS, SKILL_NAME, abilityMod, formatMoney, signed, type DamageType } from '../../shared/5e/core';
 import { CR_LABEL, type MonsterAction, type MonsterData, type ResourceInfo } from '../../shared/5e/types';
 import { itemName } from '../../shared/5e/sheet';
 import { monsterData, rules5e } from '../5e/rules-data';
-import { clip, formerNameLine, placeName, quote } from './prompt-text';
+import { clip, formerNameLine, placeAndSpot, placeName, quote } from './prompt-text';
 import { REST_ONLY, conditionNames, currentAc, freeCastsLeft, hpMaxOf, pactLeft, resourceLeft, sheetOf, slotsLeft } from './rules5e';
 import { magicWorld, modOf } from './mod5e';
 import { scenarioMonster5e, type Scenario } from './scenario';
@@ -34,7 +35,7 @@ export const DM_HEAD_5E = `你是「龙娘跑团」的主持人（DM）。这是
 - 战斗：打起来用 start_combat，放出剧本 monsters 里的怪物（只用剧本里写了的），程序掷先攻、记生命值和 AC。每次结算是一个角色的回合：他可以移动，做一个动作（攻击、施法、冲刺、撤离、闪避、协助、躲藏、搜索、用物品），有些职业、法术还有一个附赠动作，另外每轮有一个反应。5 级的战士、野蛮人、圣武士、游侠、武僧有额外攻击，一个攻击动作打两次。角色攻击用 attack，攻击类的戏法和法术用 cast_spell，闪避、协助用 use_feature 的 dodge、help。
 - 打起来以前写好的行动：大家一起交的行动是一个个结算的，前面的结算开了打，后面的人写的事可能已经做不成了。照他的本意改成战斗里最接近的一个回合（要帮忙的改成协助，要赶路的改成移动、冲刺，要躲的改成躲藏、闪避），叙述里写清他实际做了什么。
 - 敌人行动：「正在打的仗」里写着这次结算轮到哪些敌人（先攻排在这个角色后面、下一个角色前面的），每个用 monster_action 行动一次，多重攻击就把里面的攻击各调用一次。你照它的习性、智力和处境决定它打谁、用什么：聪明的会集火、撤退、讨饶，野兽受了重伤会逃，一般不去补刀倒地的人（专吃尸体的怪物例外）。敌人倒下、逃走、投降，或者角色们脱身以后，用 end_combat。行动的效果传到了别的地点正在打的仗（远处敲钟、放下闸门），update_enemy、end_combat 填那个地点的 location。
-- 没有地图：远近、站位、掩护按叙述判断。近战够得到 5 尺（长柄武器 10 尺），远程看射程。目标一半身子被挡住时 cover 填 half（AC +2），大半被挡住填 three-quarters（AC +5）。在敌人身边离开又不撤离，会挨一次借机攻击（那个敌人用 monster_action 打一下，算它这一轮的反应）。
+- 远近按站位算（见下面的「站位」）：近战、触碰的法术只打得到同一个站位上的，长柄武器也一样；远程武器、扔出去的投掷武器（attack 填 thrown）、远程法术在这个地点里哪里都打得到，射程按叙述判断。目标站在有掩体的站位，程序自动算半身掩护（AC +2）；叙述里挡得更多的（只露出一点），cover 填 three-quarters（AC +5）。在敌人身边离开又不撤离，会挨一次借机攻击：set_spot 走开时程序会提醒，那个敌人用 monster_action 填 opportunity=true 打一下（算它这一轮的反应，不占它的回合）。
 - 法术用 cast_spell：程序检查他准备了没有、扣法术位、处理专注（同时只能专注一个），照法术的机制掷攻击、让目标豁免、掷伤害或治疗、加状态和效果；结果里附着法术说明，机制以外的效果照说明叙述。持续的法术之后再生效用 spell_effect。施法者受伤时程序会让他做专注豁免。
 - 状态用 condition 加减；剧本、能力写着「到他下一个回合结束」「到你下回合开始」的，填 until，程序到时候自动去掉。打仗时剧本里要数的东西（钟敲了几声、机关转了几格）用 update_enemy 的 mark 记在相关的敌人身上。
 - 能力用 use_feature（狂暴、回气、诗人激励、引导神力、圣疗、荒野变形、功力点、术法点……），角色列表里写着他有什么、还剩几次。偷袭、至圣斩、震慑拳这类随攻击发动的，在 attack 里填。
@@ -128,7 +129,7 @@ export function describeCharacter5e(scenario: Scenario, c: Character, clueTitles
   const sheet = sheetOf(s, rules);
   const role = scenario.roles.find((r) => r.key === c.roleKey);
   const lines = [
-    `- [编号 ${c.id}] ${c.name}｜身份：${role?.name ?? c.roleKey}（${c.roleKey}）｜所在：${placeName(scenario, c.location)}${c.dead ? '｜已经死亡' : ''}`,
+    `- [编号 ${c.id}] ${c.name}｜身份：${role?.name ?? c.roleKey}（${c.roleKey}）｜所在：${placeAndSpot(scenario, c)}${c.dead ? '｜已经死亡' : ''}`,
     ...formerNameLine(c),
     `  ${sheet.speciesName}，${sheet.className} ${sheet.level} 级${sheet.subclassName ? `（${sheet.subclassName}）` : ''}，背景：${sheet.backgroundName}`,
   ];
@@ -226,7 +227,7 @@ export function fightsBlock5e(scenario: Scenario, world: World, characters: Char
     });
     const monsters = f.monsters.map((m) => {
       if (m.defeated) return `  - ${m.id} ${m.name}：${m.fled ? '逃走或投降了' : '倒下了'}`;
-      const bits = [`生命 ${m.hp}/${m.hpMax}${m.tempHp ? `（临时 ${m.tempHp}）` : ''}`, `AC ${m.ac}`];
+      const bits = [`站在${spotName(m.spot)}`, `生命 ${m.hp}/${m.hpMax}${m.tempHp ? `（临时 ${m.tempHp}）` : ''}`, `AC ${m.ac}`];
       if (m.conditions.length) bits.push(`状态：${conditionNames(m.conditions).join('、')}`);
       if (m.effects.length) bits.push(`效果：${m.effects.map((e) => `${e.name}（${e.note}）`).join('、')}`);
       if (m.spent.length) bits.push(`还没充能：${m.spent.join('、')}`);

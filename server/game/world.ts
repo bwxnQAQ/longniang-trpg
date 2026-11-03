@@ -23,6 +23,15 @@ export type World = {
   /** 5E 模组（V0.9.0）：每个地点正在打的仗（地点 key → 战斗）、已经拿走的宝藏（宝藏 key → 角色编号）。 */
   fights5e: Record<string, Fight5e>;
   treasureTaken: Record<string, number>;
+  /** 地图（V1.0.x）：谁发现了哪些暗道（角色编号 → 暗道的 pathKey）。发现了的才画在他的地图上、才走得通。 */
+  exitsFound: Record<string, string[]>;
+  /** AI 角色（V1.1.0）：请了 AI 角色来演的身份（key）上一次交行动是第几轮。回合模式下一轮只交一次（交不出来的也算交过）。 */
+  personaTurns: Record<string, number>;
+  /**
+   * AI 角色（V1.1.0）：计时模式下，它上一次交的行动做到游戏时间的几点（和它一起结算的那个行动的结束时间）。
+   * 这之前开始的行动不再让它交：同一段时间里只做一件事，不会一会儿一个主意，也不多花钱。
+   */
+  personaUntil: Record<string, number>;
 };
 
 /** 一场战斗：在哪、第几轮（每结算一次这里的行动算一轮）、先后手、敌人。 */
@@ -51,12 +60,30 @@ export type EnemyState = {
   fled?: boolean;
   /** 首领的护盾：还在的时候打不动（伤害是 0），要大家配合破开。 */
   shielded: boolean;
+  /** 站位（V1.0.x）：在这个地点里站在哪；没写是在大家中间。 */
+  spot?: string | null;
 };
+
+/** 一个角色发现了的暗道（pathKey）。 */
+export function exitsFoundBy(world: World, characterId: number): Set<string> {
+  const list = world.exitsFound?.[String(characterId)];
+  return new Set(Array.isArray(list) ? list.filter((k): k is string => typeof k === 'string') : []);
+}
+
+/**
+ * 一个角色知道的暗道（pathKey）：合作的剧本里一队人的地图是共享的，队友发现的也算；别的剧本只算自己发现的。
+ * 走路找路线、估时、主持人看的路程、玩家的地图都按这个算。
+ */
+export function exitsKnownTo(world: World, scenario: Pick<Scenario, 'relation'>, characters: Iterable<Pick<Character, 'id'>>, characterId: number): Set<string> {
+  const known = exitsFoundBy(world, characterId);
+  if (scenario.relation === 'coop') for (const c of characters) for (const k of exitsFoundBy(world, c.id)) known.add(k);
+  return known;
+}
 
 export type NpcState = { location?: string | null; attitude?: string; dead?: boolean; notes?: string[] };
 
 export function emptyWorld(): World {
-  return { npcs: {}, events: {}, ending: null, combats: {}, lootTaken: {}, encountered: {}, fights5e: {}, treasureTaken: {} };
+  return { npcs: {}, events: {}, ending: null, combats: {}, lootTaken: {}, encountered: {}, fights5e: {}, treasureTaken: {}, exitsFound: {}, personaTurns: {}, personaUntil: {} };
 }
 
 export function parseWorld(text: string | null | undefined): World {
@@ -72,6 +99,9 @@ export function parseWorld(text: string | null | undefined): World {
       encountered: obj<World['encountered']>(data.encountered),
       fights5e: obj<World['fights5e']>(data.fights5e),
       treasureTaken: obj<World['treasureTaken']>(data.treasureTaken),
+      exitsFound: obj<World['exitsFound']>(data.exitsFound),
+      personaTurns: obj<World['personaTurns']>(data.personaTurns),
+      personaUntil: obj<World['personaUntil']>(data.personaUntil),
     };
   } catch {
     return emptyWorld();
@@ -160,6 +190,8 @@ export type Character = {
   conditions: Condition[];
   items: string[];
   location: string | null;
+  /** 站位（V1.0.x）：在这个地点里站在哪（剧本写的站位名，或者主持人起的）；没特别站在哪、和大家在一起是 null。 */
+  spot?: string | null;
   visited: string[];
   dead: boolean;
   /** 带进这一局的宠物（只陪伴）。 */
@@ -196,6 +228,7 @@ type CharacterRow = {
   conditions: string;
   items: string;
   location: string | null;
+  spot: string | null;
   visited: string;
   dead: number;
   pet: string | null;
@@ -239,6 +272,7 @@ function toCharacter(row: CharacterRow): Character {
     conditions: jsonOr<Condition[]>(row.conditions, []),
     items: jsonOr<string[]>(row.items, []),
     location: row.location,
+    spot: row.spot ?? null,
     visited: jsonOr<string[]>(row.visited, []),
     dead: row.dead === 1,
     pet: row.pet ? jsonOr<PetCompanion | null>(row.pet, null) : null,
@@ -279,7 +313,7 @@ export function stateOf(c: Pick<Character, 'wounds' | 'stress' | 'conditions' | 
 /** 把角色的可变部分写回数据库。 */
 export function saveCharacter(db: DB, c: Character) {
   db.prepare(
-    `UPDATE characters SET wounds = ?, stress = ?, conditions = ?, items = ?, location = ?, visited = ?, dead = ?, v2 = ?, v5 = ?
+    `UPDATE characters SET wounds = ?, stress = ?, conditions = ?, items = ?, location = ?, spot = ?, visited = ?, dead = ?, v2 = ?, v5 = ?
      WHERE id = ?`,
   ).run(
     c.wounds,
@@ -287,6 +321,7 @@ export function saveCharacter(db: DB, c: Character) {
     JSON.stringify(c.conditions),
     JSON.stringify(c.items),
     c.location,
+    c.location ? (c.spot ?? null) : null,
     JSON.stringify(c.visited),
     c.dead ? 1 : 0,
     c.v2 ? JSON.stringify(c.v2) : null,

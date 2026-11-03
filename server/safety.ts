@@ -10,7 +10,19 @@ import { HttpError } from './http';
 // 管理员自己写了违规内容也照样拦下，但不警告、不封号（不然没人能管了），记成 blocked。
 // 多人局里被拒绝（发给 AI 的内容混着别人写的）、AI 自己写的内容被拒绝：分不清是谁的，只标给管理员看（flagged）。
 
-export type ViolationSource = 'action' | 'question' | 'dialogue' | 'character' | 'scenario' | 'generate' | 'summary' | 'submission' | 'draft' | 'guide';
+export type ViolationSource =
+  | 'action'
+  | 'question'
+  | 'dialogue'
+  | 'character'
+  | 'scenario'
+  | 'generate'
+  | 'summary'
+  | 'submission'
+  | 'draft'
+  | 'guide'
+  | 'persona'
+  | 'companion';
 
 export const SOURCE_LABEL: Record<ViolationSource, string> = {
   action: '角色的行动',
@@ -23,6 +35,9 @@ export const SOURCE_LABEL: Record<ViolationSource, string> = {
   submission: '投稿的简介',
   draft: '投稿的剧本',
   guide: '问网站向导的问题',
+  // AI 大厅（V1.1.0）：AI 角色的名字、简介、人设；AI 角色在对局里交的行动（AI 自己写的，被拒绝了只标给管理员看）
+  persona: 'AI 角色的人设',
+  companion: 'AI 角色的行动',
 };
 
 /** 记下的违规内容最多留多少字（给管理员看是怎么回事就够了）。 */

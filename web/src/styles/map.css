@@ -1,0 +1,314 @@
+/* ---------- 地图（V1.0.x）：对局页面的「地图」页签、放大的地图、管理页的整张地图 ----------
+   像一张墨线画在纸上的地图：去过的地方是墨点，看得到还没去过的是空心的虚线圈，路是墨线（通向没去过的地方的路是虚线），
+   暗道是描金的点线；自己在的地方是朱砂红的印，选中的地点和走过去的路用青花蓝。 */
+
+.map-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.map-zoom {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -4px;
+}
+
+.map-canvas {
+  width: 100%;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--field);
+  overflow: hidden;
+}
+
+.map-canvas svg {
+  display: block;
+  font-family: var(--font-story);
+  user-select: none;
+}
+
+.map-grid-dot {
+  fill: var(--rule-strong);
+  opacity: 0.55;
+}
+
+.map-edge {
+  stroke: var(--ink-soft);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+.map-edge.is-faint {
+  stroke: var(--muted);
+  stroke-width: 1.2;
+  stroke-dasharray: 4 4;
+}
+
+.map-edge.is-secret {
+  stroke: var(--gold);
+  stroke-width: 2;
+  stroke-dasharray: 0.5 4.5;
+}
+
+.map-edge.is-route {
+  stroke: var(--focus);
+  stroke-width: 3.2;
+  stroke-dasharray: none;
+  opacity: 0.85;
+}
+
+.map-minutes {
+  fill: var(--muted);
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  paint-order: stroke;
+  stroke: var(--field);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.map-node {
+  cursor: pointer;
+  outline: none;
+}
+
+.map-hit {
+  fill: transparent;
+}
+
+.map-dot {
+  fill: var(--ink);
+  stroke: var(--field);
+  stroke-width: 1.5;
+}
+
+.map-node.is-known .map-dot {
+  fill: var(--field);
+  stroke: var(--muted);
+  stroke-width: 1.4;
+  stroke-dasharray: 2.2 1.8;
+}
+
+.map-node.is-here .map-dot {
+  fill: var(--seal);
+  stroke: var(--field);
+  stroke-dasharray: none;
+}
+
+.map-here-ring {
+  fill: none;
+  stroke: var(--seal);
+  stroke-width: 1.5;
+}
+
+.map-select {
+  fill: none;
+  stroke: var(--focus);
+  stroke-width: 2;
+}
+
+.map-node:focus-visible .map-hit {
+  fill: none;
+  stroke: var(--focus);
+  stroke-width: 2;
+  stroke-dasharray: 3 3;
+}
+
+.map-clue {
+  fill: var(--gold);
+}
+
+.map-person {
+  fill: var(--jade);
+  stroke: var(--field);
+  stroke-width: 1;
+}
+
+.map-npc {
+  fill: var(--ink-soft);
+  stroke: var(--field);
+  stroke-width: 1;
+}
+
+.map-label {
+  fill: var(--ink);
+  font-size: 12px;
+  paint-order: stroke;
+  stroke: var(--field);
+  stroke-width: 3.5px;
+  stroke-linejoin: round;
+}
+
+.map-canvas-large .map-label {
+  font-size: 13px;
+}
+
+.map-node.is-known .map-label {
+  fill: var(--muted);
+}
+
+.map-node.is-here .map-label,
+.map-node.is-selected .map-label {
+  font-weight: 700;
+}
+
+.map-node:hover .map-label {
+  fill: var(--focus);
+}
+
+/* 地点卡片 */
+.map-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 2px 0;
+  border-top: 1px solid var(--rule);
+  font-size: 14px;
+}
+
+.map-card p {
+  margin: 0;
+}
+
+.map-card-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.map-card-title {
+  margin: 0;
+  font-family: var(--font-story);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.tag.tag-here {
+  border-color: var(--seal);
+  color: var(--seal);
+}
+
+.map-card-desc {
+  color: var(--ink-soft);
+  font-family: var(--font-story);
+  line-height: 1.8;
+}
+
+.map-route {
+  color: var(--ink);
+}
+
+.map-card-line {
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.map-card-actions {
+  margin-top: 6px;
+}
+
+/* 管理页的整张地图：不用太宽 */
+.admin-map {
+  max-width: 640px;
+}
+
+/* 放大的地图：对话框里，卡片放在地图下面 */
+.map-big {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.map-big .map-card {
+  padding-top: 12px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .map-edge.is-route {
+    transition: opacity 0.2s;
+  }
+}
+
+/* ---------- 剧本编辑器：「地点」上面的小地图（拖动摆位置）、出口的「暗门」 ---------- */
+
+.ed-map {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.ed-map-box {
+  width: 100%;
+}
+
+.ed-map-box svg {
+  display: block;
+  font-family: var(--font-story);
+  touch-action: none;
+  user-select: none;
+}
+
+.ed-map-paper {
+  fill: var(--field);
+  stroke: var(--rule);
+}
+
+.ed-map-edge {
+  stroke: var(--ink-soft);
+  stroke-width: 1.5;
+}
+
+.ed-map-edge.is-secret {
+  stroke: var(--gold);
+  stroke-width: 2;
+  stroke-dasharray: 0.5 4.5;
+  stroke-linecap: round;
+}
+
+.ed-map-node {
+  cursor: grab;
+  outline: none;
+}
+
+.ed-map-node.is-dragging {
+  cursor: grabbing;
+}
+
+.ed-map-hit {
+  fill: transparent;
+}
+
+.ed-map-node:focus-visible .ed-map-hit {
+  stroke: var(--focus);
+  stroke-width: 2;
+  stroke-dasharray: 3 3;
+}
+
+.ed-map-dot {
+  fill: var(--ink);
+  stroke: var(--field);
+  stroke-width: 1.5;
+}
+
+.ed-map-node.is-dragging .ed-map-dot {
+  fill: var(--focus);
+}
+
+.ed-map-label {
+  fill: var(--ink);
+  font-size: 12px;
+  paint-order: stroke;
+  stroke: var(--field);
+  stroke-width: 3.5px;
+  stroke-linejoin: round;
+}
+
+.ed-hidden-exit {
+  flex: none;
+  font-size: 13px;
+}
+

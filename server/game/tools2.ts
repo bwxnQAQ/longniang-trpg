@@ -1,5 +1,6 @@
 // 规则第二版（V0.7.0）的主持工具：七项属性的检定、生命值和精神值、战斗、道具、地下城的宝物。
 // 和第一版共用线索、移动、NPC、时间线、私信、结局这几个工具（在 tools.ts 里）。
+import { matchSpot, sameSpot, spotFlags, spotName } from '../../shared/spots';
 import { randomInt } from 'node:crypto';
 import { OUTCOME_LABEL, OUTCOME_MEANING, outcomeFor } from '../../shared/rules';
 import {
@@ -73,7 +74,7 @@ const attribute2Param = {
 const severityParam = { type: 'string', enum: SEVERITY_KEYS, description: '轻 light（1～3）、中 medium（4～6）、重 heavy（7～10）；难度高的地下城程序会再加' };
 
 /** 第一版里能直接沿用的工具（线索、移动、NPC、时间线、私信、结局）。 */
-const SHARED_TOOLS = new Set(['give_clue', 'move_character', 'update_npc', 'trigger_event', 'private_message', 'end_game']);
+const SHARED_TOOLS = new Set(['give_clue', 'move_character', 'reveal_exit', 'noise', 'set_spot', 'update_npc', 'trigger_event', 'private_message', 'end_game']);
 
 const ROLL_CHECK_2: ToolDefinition = {
   name: 'roll_check',
@@ -191,6 +192,7 @@ const START_COMBAT: ToolDefinition = {
         items: { type: 'object', properties: { enemy: { type: 'string' }, count: { type: 'integer' } }, required: ['enemy', 'count'] },
       },
       note: { type: 'string', description: '怎么打起来的，一句话' },
+      spot: { type: 'string', description: '这些敌人出现在哪个站位（剧本里这个地点的站位名）；不写就在大家中间' },
     },
     required: ['note'],
   },
@@ -210,6 +212,7 @@ const ATTACK: ToolDefinition = {
       modifier: { type: 'integer', description: '情境修正，-3 到 +3（偷袭、占了地利 +1～+2；被缠住、看不清 -1～-2）' },
       assisted: { type: 'boolean', description: '有同伴在场协助（+1）' },
       weakness: { type: 'boolean', description: '这一下正好用上了首领这一局的弱点' },
+      ranged: { type: 'boolean', description: '远程：弓弩、投掷、火铳、暗器（近战不填）。近战只能打同一个站位上的敌人' },
       reason: { type: 'string', description: '怎么攻击的，一句话' },
     },
     required: ['character', 'enemy', 'attribute', 'modifier', 'reason'],
@@ -227,7 +230,8 @@ const ENEMY_ATTACK: ToolDefinition = {
       character: characterParam,
       severity: severityParam,
       ability: { type: 'string', description: '用了剧本里写的哪个本事（不是普通攻击才填）' },
-      modifier: { type: 'integer', description: '情境修正，-3 到 +3（角色躲在掩体后 -1～-2，角色倒地 +2）' },
+      modifier: { type: 'integer', description: '情境修正，-3 到 +3（角色倒地 +2；站位的掩体程序会算，不用再减）' },
+      ranged: { type: 'boolean', description: '远程的本事：射箭、吐毒、扔东西（近战不填）。近战只能打同一个站位上的角色' },
     },
     required: ['enemy', 'character', 'severity'],
   },
@@ -304,6 +308,7 @@ const USE_SKILL: ToolDefinition = {
       target_character: { type: 'integer', description: '治疗、回精神、护身、加成类技能用在谁身上（不填是自己）' },
       modifier: { type: 'integer', description: '攻击类技能的情境修正，-3 到 +3' },
       weakness: { type: 'boolean', description: '攻击类技能打首领时正好用上了这一局的弱点（和 attack 的 weakness 一样）' },
+      ranged: { type: 'boolean', description: '攻击类技能是远程打的（弓弩、投掷、暗器），和 attack 的 ranged 一样；破军一击只能近战' },
       reason: { type: 'string', description: '怎么用的，一句话' },
     },
     required: ['character', 'skill', 'reason'],
@@ -396,10 +401,11 @@ export class Rules2Context extends ResolutionContext {
       case 'move_character': {
         const mover = this.character(input.character);
         const from = mover.location;
-        // 奇遇只在走到这一局还没去过的地方时碰得上（来回走、原地「移动」不算）
-        const fresh = typeof input.location === 'string' && !mover.visited.includes(input.location);
+        const visitedBefore = new Set(mover.visited);
         let result = super.run(name, input);
         if (result.isError || mover.location === from) return result;
+        // 奇遇只在走到这一局还没去过的地方时碰得上（来回走、原地「移动」不算；时间不够只走到半路的，看停下的地方）
+        const fresh = !!mover.location && !visitedBefore.has(mover.location);
         if (from) result = this.leftFight(mover, from, result);
         return this.dungeon && fresh ? this.maybeQiyu(input, result) : result;
       }
@@ -481,6 +487,39 @@ export class Rules2Context extends ResolutionContext {
 
   private combatAt(location: string | null): CombatState | null {
     return location ? (this.world.combats[location] ?? null) : null;
+  }
+
+  /** 近战够不够得着（V1.0.x 站位）：要和敌人站在同一个站位。 */
+  private meleeReach(c: Character, enemy: EnemyState) {
+    if (sameSpot(c.spot, enemy.spot)) return;
+    throw new ToolError(
+      `${enemy.name}（${enemy.id}）站在${spotName(enemy.spot)}，${c.name}在${spotName(c.spot)}：近战够不着。先用 set_spot 让${c.name}走过去（走开时身边的敌人通常趁机打一下）；用的是远程就填 ranged=true`,
+    );
+  }
+
+  protected override foesBeside(c: Character): { id: string; name: string }[] {
+    return (this.combatAt(c.location)?.enemies ?? []).filter((e) => !e.defeated && sameSpot(e.spot, c.spot)).map((e) => ({ id: e.id, name: e.name }));
+  }
+
+  protected override freeHitHow(): string {
+    return '用 enemy_attack 结算，这一下近战照样打得到。';
+  }
+
+  /** 敌人换站位（V1.0.x）：在这一局正在打的仗里找这个敌人（先找行动的人所在的地方）。 */
+  protected override setEnemySpot(input: Input): ToolResult {
+    const actor = this.characters.get(this.actorId);
+    const fights = [this.combatAt(actor?.location ?? null), ...Object.values(this.world.combats)].filter((f): f is CombatState => !!f);
+    const enemy = fights.flatMap((f) => f.enemies).find((e) => e.id === input.enemy);
+    if (!enemy) {
+      const all = fights.flatMap((f) => f.enemies.map((e) => `${e.id}=${e.name}`));
+      throw new ToolError(`没有这个敌人：${String(input.enemy)}${all.length ? `，现在的敌人：${[...new Set(all)].join('、')}` : '（这里没有在打仗）'}`);
+    }
+    const fight = fights.find((f) => f.enemies.includes(enemy))!;
+    const spot = matchSpot(this.scenario.locations.find((l) => l.key === fight.location), input.spot);
+    enemy.spot = spot;
+    this.worldChanged = true;
+    const beside = [...this.characters.values()].filter((x) => !x.dead && x.location === fight.location && sameSpot(x.spot, spot)).map((x) => x.name);
+    return ok({ enemy: `${enemy.id}=${enemy.name}`, spot: spotName(spot), beside });
   }
 
   private enemyIn(fight: CombatState | null, raw: unknown): EnemyState {
@@ -842,10 +881,12 @@ export class Rules2Context extends ResolutionContext {
     const existing = this.combatAt(location);
     const fight: CombatState = existing ?? { location, round: 1, order: [], enemies: [] };
     const added: EnemyState[] = [];
+    // 站位（V1.0.x）：敌人出现在哪
+    const spot = matchSpot(this.scenario.locations.find((l) => l.key === location), input.spot);
     for (const { enemy, count } of spec) {
       for (let i = 0; i < count; i++) {
         const n = fight.enemies.filter((e) => e.key === enemy).length + added.filter((e) => e.key === enemy).length + 1;
-        added.push(this.enemyFrom(enemy, n));
+        added.push({ ...this.enemyFrom(enemy, n), ...(spot ? { spot } : {}) });
       }
     }
     if (fight.enemies.length + added.length > 12) throw new ToolError('一场战斗里最多 12 个敌人');
@@ -882,6 +923,7 @@ export class Rules2Context extends ResolutionContext {
         attack: e.attack,
         max_severity: e.maxSeverity,
         abilities: e.abilities,
+        spot: spotName(e.spot),
         ...(e.shielded ? { shielded: `护盾还在，打不动：${this.scenario.dungeon?.boss.shield ?? ''}` } : {}),
         ...(e.defeated ? { defeated: true } : {}),
       })),
@@ -907,7 +949,16 @@ export class Rules2Context extends ResolutionContext {
     const skillDamage = Number(input.skillDamage) || 0;
     const pierce = Number(input.pierce) || 0;
     const halfDamage = input.halfDamage === true;
-    const defense = Math.max(0, enemy.defense - pierce);
+    // 站位（V1.0.x）：近战够得着的才打得了；意志（法术）在这个地点哪里都打得到；
+    // 弓弩这类远程打站在掩体里的防御 +1，身边有敌人时 -1
+    const ranged = input.ranged === true || attribute === 'will';
+    if (!ranged) this.meleeReach(c, enemy);
+    const physicalRanged = ranged && attribute !== 'will';
+    const place = this.scenario.locations.find((l) => l.key === c.location);
+    const cover = physicalRanged && spotFlags(place, enemy.spot).cover ? 1 : 0;
+    if (cover) notes.push(`${enemy.name}站在${spotName(enemy.spot)}，有掩体：防御 +1`);
+    const crowded = physicalRanged && fight!.enemies.some((e) => !e.defeated && sameSpot(e.spot, c.spot));
+    const defense = Math.max(0, enemy.defense - pierce) + cover;
     const boss = this.scenario.dungeon?.boss;
     const weakness = input.weakness === true && !!boss && enemy.key === boss.enemy;
     if (input.weakness === true && !weakness) notes.push('弱点只对首领有用，没有算');
@@ -921,7 +972,7 @@ export class Rules2Context extends ResolutionContext {
       penalties: this.penalties2(c),
       weakness: weakness ? WEAKNESS_BONUS : 0,
       boost: this.takeBoost(c, s),
-      extra: skillHit ? [{ label: '技能', value: skillHit }] : [],
+      extra: [...(skillHit ? [{ label: '技能', value: skillHit }] : []), ...(crowded ? [{ label: '身边有敌人', value: -1 }] : [])],
     };
     const hits = (r: CheckResult) => r.outcome === 'critical' || (r.outcome !== 'fumble' && r.total >= defense);
     const first = check2(checkInput, this.rng);
@@ -1002,16 +1053,27 @@ export class Rules2Context extends ResolutionContext {
       severity = enemy.maxSeverity;
     }
     if (severity === 'heavy' && !text(input.ability, 40)) notes.push('重伤一般是首领用本事时才有，下次写上用的哪个本事');
+    // 站位（V1.0.x）：近战要站在一起；远程打站在掩体里的角色，防御 +1；身边站着角色时远程 -1
+    const ranged = input.ranged === true;
+    if (!ranged && !sameSpot(enemy.spot, c.spot)) {
+      // 刚从它身边走开的：趁机打的这一下照样打得到
+      if (this.takeFreeHit(c.id, enemy.id)) notes.push(`${c.name}刚从${enemy.name}身边走开：这一下是趁机打的`);
+      else throw new ToolError(`${enemy.name}（${enemy.id}）站在${spotName(enemy.spot)}，${c.name}在${spotName(c.spot)}：近战够不着。先用 set_spot（enemy）让它走过去；用的是远程的本事就填 ranged=true`);
+    }
+    const cover = ranged && spotFlags(this.scenario.locations.find((l) => l.key === c.location), c.spot).cover ? 1 : 0;
+    if (cover) notes.push(`${c.name}站在${spotName(c.spot)}，有掩体：防御 +1`);
+    const crowded = ranged && [...this.characters.values()].some((x) => !x.dead && (x.v2?.dying ?? null) === null && x.location === fight!.location && sameSpot(x.spot, enemy.spot));
     const modifier = this.modifierOf(input, notes);
     const dice = roll2d6(this.rng);
     const parts = [
       { label: '骰子', value: dice[0] + dice[1] },
       ...(enemy.attack ? [{ label: '攻击', value: enemy.attack }] : []),
       ...(modifier ? [{ label: '情境修正', value: modifier }] : []),
+      ...(crowded ? [{ label: '身边有敌人', value: -1 }] : []),
     ];
     const total = parts.reduce((sum, p) => sum + p.value, 0);
     const outcome = outcomeFor(dice[0], dice[1], total);
-    const defense = defenseOf(s);
+    const defense = defenseOf(s) + cover;
     // 倒地的人躲不开
     const hit = outcome === 'critical' || (outcome !== 'fumble' && (s.dying !== null || total >= defense));
     let damage: number | null = null;
@@ -1373,6 +1435,7 @@ export class Rules2Context extends ResolutionContext {
     if (e.type === 'strike') {
       const enemy = this.enemyIn(this.combatAt(c.location), input.target_enemy);
       if (enemy.defeated) throw new ToolError(`${enemy.name}（${enemy.id}）已经倒下了`);
+      if (e.melee || input.ranged !== true) this.meleeReach(c, enemy);
     }
     if ((e.type === 'sweep' || e.type === 'scare') && !this.combatAt(c.location)) throw new ToolError('这里没有在打仗');
     const before = s.mp;
@@ -1387,6 +1450,7 @@ export class Rules2Context extends ResolutionContext {
         enemy: input.target_enemy,
         // 用技能打首领时一样能用上这一局的弱点（和 attack 一样由主持人判断）
         weakness: input.weakness === true,
+        ranged: !e.melee && input.ranged === true,
         skillHit: e.hit,
         skillDamage: e.damage,
         pierce: e.pierce,
@@ -1398,7 +1462,7 @@ export class Rules2Context extends ResolutionContext {
       const targets = fight.enemies.filter((x) => !x.defeated);
       const hits: string[] = [];
       for (const enemy of targets) {
-        const r = this.attack({ character: c.id, enemy: enemy.id, attribute: e.attribute === 'will' ? 'will' : e.attribute, modifier: 0, halfDamage: true, reason: skill.name });
+        const r = this.attack({ character: c.id, enemy: enemy.id, attribute: e.attribute === 'will' ? 'will' : e.attribute, modifier: 0, halfDamage: true, ranged: true, reason: skill.name });
         const d = JSON.parse(r.content) as { hit: boolean; damage: number | null };
         hits.push(`${enemy.name}${d.hit ? `中了（${d.damage ?? 0}）` : '躲开了'}`);
       }

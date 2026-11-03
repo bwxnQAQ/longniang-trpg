@@ -9,6 +9,7 @@ import { AccountPage } from './pages/Account';
 import { AdminPage } from './pages/Admin';
 import { AdminRoomPage } from './pages/AdminRoom';
 import { AgreeRulesPage } from './pages/AgreeRules';
+import { AiHallPage } from './pages/AiHall';
 import { BagPageView } from './pages/Bag';
 import { CharactersPage } from './pages/Characters';
 import { CollectionPage } from './pages/Collection';
@@ -80,6 +81,10 @@ export function App() {
   } else if (pathname === '/modules') {
     // 模组（V1.0.0）：5E 模组从剧本大厅里单独拿出来
     page = <ModuleHallPage />;
+    width = 'wide';
+  } else if (pathname === '/ai-hall') {
+    // AI 大厅（V1.1.0）：大家做的 AI 角色；游客能看，做和请要正式账号
+    page = <AiHallPage />;
     width = 'wide';
   } else if (pathname === '/editor') {
     // 网页剧本编辑器（V0.8.0）：草稿列表和新建。游客也能写、能检查、能导出，存不了草稿

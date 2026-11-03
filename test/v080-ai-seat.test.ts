@@ -126,7 +126,7 @@ test('房主能把没人选的身份交给 AI、改名字、取消；普通成�
   // 不起名字：用身份的名字。别人选身份时这个身份算有人了
   let r = await seat('tester1', roomId, 'reporter');
   assert.equal(r.status, 200, JSON.stringify(r.data));
-  assert.deepEqual(r.data.companions, [{ roleKey: 'reporter', roleName: REPORTER.name, name: REPORTER.name }]);
+  assert.deepEqual(r.data.companions, [{ roleKey: 'reporter', roleName: REPORTER.name, name: REPORTER.name, persona: null }]);
   assert.equal(r.data.scenario.roles.find((x: { key: string }) => x.key === 'reporter').takenBy, REPORTER.name);
 
   // 改名字：新名字会写进给主持 AI 的提示词，先检查内容
@@ -154,7 +154,7 @@ test('房主能把没人选的身份交给 AI、改名字、取消；普通成�
 
   // 别的成员看到的游戏状态里也有
   const g = await game(roomId, 'tester2');
-  assert.deepEqual(g.companions, [{ roleKey: 'reporter', roleName: REPORTER.name, name: '林小满' }]);
+  assert.deepEqual(g.companions, [{ roleKey: 'reporter', roleName: REPORTER.name, name: '林小满', persona: null }]);
   assert.equal(g.scenario.roles.find((x: { key: string }) => x.key === 'reporter').takenBy, '林小满');
 
   // 普通成员不能取消；站长（能管所有对局）可以标
@@ -426,8 +426,8 @@ test('开局写系统记录、开始以后不能改；结算时主持 AI 的剧�
   assert.equal((await unseat('tester1', roomId, 'reporter')).status, 409);
   // 游戏状态里有队友
   assert.deepEqual((await game(roomId, 'tester1')).companions, [
-    { roleKey: 'reporter', roleName: REPORTER.name, name: '林小满' },
-    { roleKey: 'sailor', roleName: '顺风号的水手', name: '顺风号的水手' },
+    { roleKey: 'reporter', roleName: REPORTER.name, name: '林小满', persona: null },
+    { roleKey: 'sailor', roleName: '顺风号的水手', name: '顺风号的水手', persona: null },
   ]);
 
   fake.requests.length = 0;

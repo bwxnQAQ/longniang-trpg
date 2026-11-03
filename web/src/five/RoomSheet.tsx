@@ -1,7 +1,8 @@
 // 5E 模组的对局里（V0.9.0）：自己的 5E 角色（生命值、AC、法术位、能力、状态、带着的东西）和所在地点正在打的仗。
-import type { Character5eView, Fight5eView } from '../api';
+import type { Character5eView, Fight5eView, PlaceInfo } from '../api';
 import { ABILITY_NAME, CONDITION_NAME, DAMAGE_NAME, SKILL_NAME, formatMoney, signed } from '../../../shared/5e/core';
 import { Meter } from '../room/Vitals';
+import { SpotGroups } from '../room/SpotGroups';
 import { AbilityBoxes } from './SheetView';
 
 const RECOVER_LABEL: Record<string, string> = { short: '短休回满', long: '长休回满', 'short-one': '短休回一次' };
@@ -197,7 +198,7 @@ export function Sheet5eBlock({ v5 }: { v5: Character5eView }) {
 }
 
 /** 所在地点正在打的仗：第几轮、先攻（这一轮谁行动过了）、敌人的生命值和状态。 */
-export function Fight5ePanel({ fight }: { fight: Fight5eView }) {
+export function Fight5ePanel({ fight, place }: { fight: Fight5eView; place: PlaceInfo | null }) {
   return (
     <section className="combat" aria-label="战斗">
       <h3 className="sheet-label">战斗 · 第 {fight.round} 轮</h3>
@@ -209,6 +210,7 @@ export function Fight5ePanel({ fight }: { fight: Fight5eView }) {
           </li>
         ))}
       </ol>
+      <SpotGroups people={fight.order} place={place} />
       <ul className="combat-enemies">
         {fight.monsters.map((m) => (
           <li key={m.id} className={m.defeated ? 'is-down' : ''}>

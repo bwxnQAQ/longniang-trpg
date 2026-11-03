@@ -11,6 +11,8 @@ export type CharacterSnapshot = {
   conditions: string;
   items: string;
   location: string | null;
+  /** 站位（V1.0.x）；早先的快照没有（那时都在大家中间）。 */
+  spot?: string | null;
   visited: string;
   dead: number;
   /** 地下城里的状态（V0.7.0，JSON；别的剧本、早先的快照是 null 或没有）。 */
@@ -57,7 +59,7 @@ export const SNAPSHOTS_KEPT = 10;
 
 export function characterSnapshots(db: DB, roomId: number): CharacterSnapshot[] {
   return db
-    .prepare('SELECT id, wounds, stress, conditions, items, location, visited, dead, v2, v5 FROM characters WHERE room_id = ? ORDER BY id')
+    .prepare('SELECT id, wounds, stress, conditions, items, location, spot, visited, dead, v2, v5 FROM characters WHERE room_id = ? ORDER BY id')
     .all(roomId) as CharacterSnapshot[];
 }
 

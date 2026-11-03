@@ -158,15 +158,20 @@ function ReportTarget({ target }: { target: Record<string, any> }) {
                   ? `私下给作者的反馈（${target.scenarioKey ?? ''}）`
                   : target.type === 'group'
                     ? `群「${target.groupName ?? ''}」里的消息`
-                    : '内容';
+                    : target.type === 'persona'
+                      ? `AI 大厅里的 AI 角色「${target.name ?? ''}」`
+                      : '内容';
 
-  // 剧本短评、给作者的反馈（V0.6.0）：在这里直接删
+  // 剧本短评、给作者的反馈（V0.6.0）、AI 大厅里的 AI 角色（V1.1.0）：在这里直接删
   async function remove() {
-    if (!window.confirm(target.type === 'rating' ? '删掉这条短评？星还留着。' : '删掉这条反馈？')) return;
+    if (!window.confirm(target.type === 'rating' ? '删掉这条短评？星还留着。' : target.type === 'persona' ? '下架这个 AI 角色？作者那边也会删掉，没结束的对局里改由主持人顺带演。' : '删掉这条反馈？')) return;
     setError('');
     try {
-      await api('DELETE', target.type === 'rating' ? `/api/admin/ratings/${target.id}/comment` : `/api/feedback/${target.id}`);
-      setRemoved('删掉了');
+      await api(
+        'DELETE',
+        target.type === 'rating' ? `/api/admin/ratings/${target.id}/comment` : target.type === 'persona' ? `/api/ai-personas/${target.id}` : `/api/feedback/${target.id}`,
+      );
+      setRemoved(target.type === 'persona' ? '下架了' : '删掉了');
     } catch (err) {
       setError(errorMessage(err));
     }
@@ -184,14 +189,14 @@ function ReportTarget({ target }: { target: Record<string, any> }) {
           {target.bio ? `；介绍：${target.bio}` : ''}
         </blockquote>
       ) : (
-        <blockquote>{target.text}</blockquote>
+        <blockquote className={target.type === 'persona' ? 'report-persona' : undefined}>{target.text}</blockquote>
       )}
-      {(target.type === 'rating' || target.type === 'feedback') &&
+      {(target.type === 'rating' || target.type === 'feedback' || target.type === 'persona') &&
         (removed ? (
           <p className="muted">{removed}</p>
         ) : (
           <button type="button" className="btn btn-small btn-danger" onClick={() => void remove()}>
-            {target.type === 'rating' ? '删除这条短评' : '删除这条反馈'}
+            {target.type === 'rating' ? '删除这条短评' : target.type === 'persona' ? '下架这个 AI 角色' : '删除这条反馈'}
           </button>
         ))}
       {target.type === 'group' && target.groupId && (

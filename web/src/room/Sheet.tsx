@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { api, errorMessage, type ClueCard, type GameState, type OtherCharacter } from '../api';
 import { formatGameTime } from '../../../shared/game';
+import { SPOT_FLAG_LABEL } from '../../../shared/spots';
 import { ATTRIBUTES, STRESS_LABEL, TRACK_MAX, WOUND_LABEL } from '../../../shared/rules';
 import { sign } from '../format';
 import { Attributes2Grid, CombatPanel, DungeonBadge, VitalsBlock } from './Vitals';
@@ -21,8 +22,8 @@ export function CharacterSheet({ game, roomId, canGive, onChanged }: { game: Gam
         {me.dead && <p className="sheet-dead">已经死亡</p>}
       </div>
       {game.dungeon && <DungeonBadge dungeon={game.dungeon} />}
-      {game.dungeon && <CombatPanel dungeon={game.dungeon} />}
-      {game.fight5e && <Fight5ePanel fight={game.fight5e} />}
+      {game.dungeon && <CombatPanel dungeon={game.dungeon} place={me.location} />}
+      {game.fight5e && <Fight5ePanel fight={game.fight5e} place={me.location} />}
       <p className="sheet-public">{me.rolePublic}</p>
 
       {me.roleSecret && (
@@ -108,8 +109,28 @@ export function CharacterSheet({ game, roomId, canGive, onChanged }: { game: Gam
       {me.location && (
         <section className="sheet-place">
           <h3 className="sheet-label">现在在</h3>
-          <p className="place-name">{me.location.name}</p>
+          <p className="place-name">
+            {me.location.name}
+            {me.spot && <span className="place-spot">·{me.spot}</span>}
+            {me.location.flags.map((f) => (
+              <span key={f} className="chip">
+                {SPOT_FLAG_LABEL[f]}
+              </span>
+            ))}
+          </p>
           <p className="place-desc">{me.location.description}</p>
+          {me.location.spots.length > 0 && (
+            <p className="place-exits">
+              站位：
+              {me.location.spots.map((x, i) => (
+                <span key={x.name}>
+                  {i > 0 && '、'}
+                  {x.name === me.spot ? <strong>{x.name}</strong> : x.name}
+                  {x.flags.length > 0 && <span className="muted">（{x.flags.map((f) => SPOT_FLAG_LABEL[f]).join('、')}）</span>}
+                </span>
+              ))}
+            </p>
+          )}
           {me.location.exits.length > 0 && (
             <p className="place-exits">
               从这里能去：

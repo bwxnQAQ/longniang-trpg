@@ -260,6 +260,8 @@ export class AiReviewer {
       pet_note: '宠物主页上的一条留言',
       rating: '剧本的一条公开短评',
       feedback: '私下发给作者的一条反馈',
+      group: '群聊里的一条消息',
+      persona: 'AI 大厅里公开的一个 AI 角色（玩家做的陪玩 AI：名字、简介、人设）',
     };
     const content =
       target.type === 'user'

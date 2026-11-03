@@ -3,6 +3,7 @@ import { requireAdmin } from '../../auth';
 import { creditOf } from '../../credit';
 import { LOG_SELECT, type LogRow } from '../../game/log';
 import { companionsOf, loadAiSeats } from '../../game/companions';
+import { mapViewOf } from '../../game/map-view';
 import { loadCharacters, loadRoom, loadScenario, parseWorld } from '../../game/world';
 import { asId, asObject, asOneOf, HttpError, type Router } from '../../http';
 import { roundUsd } from '../../money';
@@ -107,7 +108,8 @@ export function registerAdminRoomRoutes(router: Router, deps: Deps) {
     const stored = loadScenario(db, roomId);
     const scenario = stored?.scenario ?? null;
     const placeName = (key: string | null) => (key ? (scenario?.locations.find((l) => l.key === key)?.name ?? key) : null);
-    const characters = loadCharacters(db, roomId).map((c) => {
+    const rawCharacters = loadCharacters(db, roomId);
+    const characters = rawCharacters.map((c) => {
       const role = scenario?.roles.find((r) => r.key === c.roleKey);
       return {
         ...c,
@@ -115,13 +117,16 @@ export function registerAdminRoomRoutes(router: Router, deps: Deps) {
         roleSecret: role?.secret ?? '',
         roleGoal: role?.goal ?? '',
         locationName: placeName(c.location),
+        spot: c.location ? (c.spot ?? null) : null,
         visitedNames: c.visited.map((k) => placeName(k) ?? k),
       };
     });
     // 交给 AI 演的身份（V0.8.0）：npcKey 是主持 AI 那份剧本里的 NPC key（世界状态的「NPC 的变化」里按它记）
-    const companions = scenario
-      ? companionsOf(scenario, loadAiSeats(db, roomId), characters.map((c) => c.roleKey)).map(({ roleKey, roleName, name, npcKey }) => ({ roleKey, roleName, name, npcKey }))
-      : [];
+    const companionInfos = scenario ? companionsOf(scenario, loadAiSeats(db, roomId), characters.map((c) => c.roleKey)) : [];
+    const companions = companionInfos.map(({ roleKey, roleName, name, npcKey }) => ({ roleKey, roleName, name, npcKey }));
+    const world = parseWorld(room.world);
+    // 地图（V1.0.x）：整张，标上所有角色、AI 队友和 NPC 在哪
+    const map = scenario ? mapViewOf(scenario, world, rawCharacters, { me: null, full: true, npcs: true, companions: companionInfos }) : null;
     const actions = (
       db
         .prepare(
@@ -240,7 +245,8 @@ export function registerAdminRoomRoutes(router: Router, deps: Deps) {
       characters,
       companions,
       scenario: stored ? { source: stored.source, key: stored.key, revealed: stored.revealed, data: stored.scenario } : null,
-      world: parseWorld(room.world),
+      world,
+      map,
       storySummary: { text: extra.story_summary, untilLogId: extra.summary_until_log_id },
       actions,
       ai: { byPurpose: costByPurpose, recent: calls },

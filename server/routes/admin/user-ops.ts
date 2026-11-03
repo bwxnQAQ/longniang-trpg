@@ -102,6 +102,8 @@ export function userOps(deps: Deps) {
       db.prepare('DELETE FROM gear_items WHERE user_id = ?').run(userId);
       // 5E 角色卡（V0.9.0）：一起删掉（这一局里的角色照旧留着）
       db.prepare('DELETE FROM cards5e WHERE user_id = ?').run(userId);
+      // AI 角色（V1.1.0）：一起删掉（已经请进对局的照旧，用的是请进去时的样子）
+      db.prepare('DELETE FROM ai_personas WHERE user_id = ?').run(userId);
       // 群聊（V0.7.0）：退出所有的群（发过的消息留着，管理员看得到）；群里没人了就解散
       db.prepare('DELETE FROM chat_group_members WHERE user_id = ?').run(userId);
       db.prepare(

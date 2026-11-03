@@ -63,6 +63,7 @@ function CompanionRow({ companion }: { companion: Companion }) {
       </span>
       <span className="member-name">{companion.name}</span>
       <AiTag />
+      {companion.persona && <span className="tag persona-tag">AI 角色</span>}
       {companion.name !== companion.roleName && <span className="member-state">{companion.roleName}</span>}
     </li>
   );

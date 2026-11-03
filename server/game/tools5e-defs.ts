@@ -6,7 +6,7 @@ import { DM_TOOLS } from './tools';
 import type { Scenario } from './scenario';
 
 /** 第一版里能直接沿用的工具。 */
-export const SHARED_TOOLS_5E = new Set(['give_clue', 'move_character', 'update_npc', 'trigger_event', 'private_message', 'end_game']);
+export const SHARED_TOOLS_5E = new Set(['give_clue', 'move_character', 'reveal_exit', 'noise', 'set_spot', 'update_npc', 'trigger_event', 'private_message', 'end_game']);
 
 const character = { type: 'integer', description: '角色编号（角色列表里的“编号”）' };
 const characters = { type: 'array', items: { type: 'integer' }, description: '角色编号' };
@@ -23,7 +23,11 @@ const advantage = { type: 'boolean', description: '这次有优势（协助、�
 const disadvantage = { type: 'boolean', description: '这次有劣势（看不清、姿势别扭、被干扰……；状态带来的程序自动算）' };
 const rescue = { type: 'boolean', description: '没成功时让程序用掉角色手里的诗人激励、英雄激励（重掷）、战士的战术思维来补救。玩家说了要全力以赴、用激励时才填 true' };
 const reason = { type: 'string', description: '判断什么，一句话。明骰的这句话玩家看得到：别写出角色还不知道的东西（埋伏、藏着的敌人、机关）' };
-const cover = { type: 'string', enum: ['half', 'three-quarters'], description: '目标有掩护：一半被挡住（half，AC +2），大半被挡住（three-quarters，AC +5）' };
+const cover = {
+  type: 'string',
+  enum: ['half', 'three-quarters'],
+  description: '目标有掩护：一半被挡住（half，AC +2），大半被挡住（three-quarters，AC +5）。目标站在有掩体的站位时程序已经算了半身掩护，挡得更多才填',
+};
 
 const CHECK: ToolDefinition = {
   name: 'check',
@@ -109,6 +113,7 @@ const ATTACK: ToolDefinition = {
       disadvantage,
       sneak_attack: { type: 'boolean', description: '游荡者想偷袭（程序检查条件：灵巧或远程武器、有优势或者目标 5 尺内有没失能的盟友、这回合还没用过）' },
       ally_adjacent: { type: 'boolean', description: '目标 5 尺内有角色的盟友（偷袭用）' },
+      thrown: { type: 'boolean', description: '把投掷武器扔出去（匕首、手斧、标枪……），算远程攻击；近战只打得到同一个站位上的敌人' },
       cover,
       reckless: { type: 'boolean', description: '野蛮人鲁莽攻击：这回合力量攻击有优势，到他下回合开始前别人打他也有优势' },
       smite: { type: 'string', enum: ['divine-smite', 'searing-smite', 'shining-smite', 'ensnaring-strike'], description: '命中以后立刻施放的斩击法术（圣武士、游侠），程序先用免费次数再用法术位' },
@@ -137,6 +142,7 @@ const MONSTER_ACTION: ToolDefinition = {
       disadvantage,
       cover,
       extra: { type: 'boolean', description: '数据块里有条件才有的额外伤害（冲锋了一段距离、已经附着在目标身上……）这次满足了' },
+      opportunity: { type: 'boolean', description: '借机攻击：角色从它身边走开时打的一下（用它的一种攻击），算它的反应，不占它这一轮的回合' },
       alternative: { type: 'boolean', description: '用数据块里「或者」的另一种伤害（集群浴血以后伤害变小之类）' },
       reactions: {
         type: 'array',
@@ -320,6 +326,7 @@ const START_COMBAT: ToolDefinition = {
       surprised: { type: 'boolean', description: '角色们被偷袭了（他们的先攻有劣势）' },
       enemies_surprised: { type: 'boolean', description: '角色们偷袭了敌人，敌人没防备（敌人的先攻有劣势）' },
       note: { type: 'string', description: '怎么打起来的，一句话' },
+      spot: { type: 'string', description: '这些怪物出现在哪个站位（剧本里这个地点的站位名）；不写就在大家中间' },
     },
     required: ['monsters', 'note'],
   },

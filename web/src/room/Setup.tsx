@@ -1,5 +1,18 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
-import { api, errorMessage, type CardsPage, type Companion, type GameState, type MyCharacter, type Pregen5eView, type RoleChoice, type RoomDetail, type ScenarioJobView, type ScenarioSummary } from '../api';
+import {
+  api,
+  errorMessage,
+  type CardsPage,
+  type Companion,
+  type GameState,
+  type MyCharacter,
+  type PersonaView,
+  type Pregen5eView,
+  type RoleChoice,
+  type RoomDetail,
+  type ScenarioJobView,
+  type ScenarioSummary,
+} from '../api';
 import { sign } from '../format';
 import { Link } from '../router';
 import { RELATION_LABEL } from '../../../shared/game';
@@ -164,6 +177,12 @@ export function SetupPanel({
                 </span>
                 <span>
                   「{c.name}」{c.name !== c.roleName && `（${c.roleName}）`}
+                  {c.persona && (
+                    <>
+                      {' '}
+                      <span className="tag persona-tag">AI 角色</span>
+                    </>
+                  )}
                 </span>
               </li>
             ))}
@@ -194,23 +213,53 @@ export function AiTag() {
   );
 }
 
-/** 房主把没人选的身份交给 AI 演（V0.8.0 AI 补位）：勾上就交给 AI，可以改名字（不改就是身份的名字）。地下城、5E 模组没有这一块。 */
+/** 能请来演的 AI 角色（V1.1.0）：自己做的，和 AI 大厅里公开的（别人的，按请的人多排）。 */
+type PersonaChoices = { mine: PersonaView[]; hall: PersonaView[] };
+
+/**
+ * 房主把没人选的身份交给 AI 演（V0.8.0 AI 补位）：勾上就交给 AI，可以改名字（不改就是身份的名字）。地下城、5E 模组没有这一块。
+ * V1.1.0：还可以请一个 AI 角色来演（自己做的、AI 大厅里公开的），它每一轮自己交行动。
+ */
 function AiSeatsEditor({ roomId, game, onGame }: { roomId: number; game: GameState; onGame: (g: GameState) => void }) {
   const roles = (game.scenario?.roles ?? []).filter((r) => !r.takenBy || game.companions.some((c) => c.roleKey === r.key));
+  const [personas, setPersonas] = useState<PersonaChoices | null>(null);
+  useEffect(() => {
+    Promise.all([
+      api<{ personas: PersonaView[] }>('GET', '/api/ai-personas?scope=mine'),
+      api<{ personas: PersonaView[] }>('GET', '/api/ai-personas?scope=hall'),
+    ])
+      .then(([mine, hall]) => setPersonas({ mine: mine.personas, hall: hall.personas.filter((p) => !p.mine) }))
+      .catch(() => setPersonas({ mine: [], hall: [] }));
+  }, []);
   if (!roles.length) return null;
   return (
     <div className="ai-seats">
       <h3 className="ai-seats-title">交给 AI 演</h3>
       <ul className="ai-seat-list">
         {roles.map((r) => (
-          <AiSeatRow key={r.key} roomId={roomId} role={r} seat={game.companions.find((c) => c.roleKey === r.key) ?? null} onGame={onGame} />
+          <AiSeatRow key={r.key} roomId={roomId} role={r} seat={game.companions.find((c) => c.roleKey === r.key) ?? null} personas={personas} onGame={onGame} />
         ))}
       </ul>
+      <Link to="/ai-hall" className="ai-seats-hall">
+        去 AI 大厅
+      </Link>
     </div>
   );
 }
 
-function AiSeatRow({ roomId, role, seat, onGame }: { roomId: number; role: RoleChoice; seat: Companion | null; onGame: (g: GameState) => void }) {
+function AiSeatRow({
+  roomId,
+  role,
+  seat,
+  personas,
+  onGame,
+}: {
+  roomId: number;
+  role: RoleChoice;
+  seat: Companion | null;
+  personas: PersonaChoices | null;
+  onGame: (g: GameState) => void;
+}) {
   const [name, setName] = useState(seat?.name ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -235,6 +284,11 @@ function AiSeatRow({ roomId, role, seat, onGame }: { roomId: number; role: RoleC
     if (changed) void call('PUT', { name: name.trim() });
   }
 
+  // 谁来演：主持人顺带演（空），或者某个 AI 角色；现在请的这个不在两张列表里（不公开了、排得靠后）也列出来
+  const current = seat?.persona ?? null;
+  const listed = [...(personas?.mine ?? []), ...(personas?.hall ?? [])];
+  const value = current ? (current.id !== null ? String(current.id) : 'current') : '';
+
   return (
     <li className={seat ? 'ai-seat is-on' : 'ai-seat'}>
       <label className="choice ai-seat-toggle">
@@ -253,6 +307,50 @@ function AiSeatRow({ roomId, role, seat, onGame }: { roomId: number; role: RoleC
             </button>
           )}
         </form>
+      )}
+      {seat && (
+        <div className="ai-seat-persona">
+          <label htmlFor={`ai-seat-persona-${role.key}`} className="visually-hidden">
+            谁来演「{role.name}」
+          </label>
+          <select
+            id={`ai-seat-persona-${role.key}`}
+            value={value}
+            disabled={busy || personas === null}
+            onChange={(e) => void call('PUT', { personaId: e.target.value === '' ? null : Number(e.target.value) })}
+          >
+            <option value="">主持人顺带演</option>
+            {current && (current.id === null || !listed.some((p) => p.id === current.id)) && (
+              <option value={value} disabled={current.id === null}>
+                AI 角色：{current.name}
+              </option>
+            )}
+            {personas && personas.mine.length > 0 && (
+              <optgroup label="我的 AI 角色">
+                {personas.mine.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {personas && personas.hall.length > 0 && (
+              <optgroup label="AI 大厅">
+                {personas.hall.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}（{p.author.displayName}）
+                  </option>
+                ))}
+              </optgroup>
+            )}
+          </select>
+          {current && (
+            <p className="ai-seat-intro">
+              {current.intro}
+              <span className="muted">{current.author}</span>
+            </p>
+          )}
+        </div>
       )}
       {error && (
         <p className="form-error" role="alert">

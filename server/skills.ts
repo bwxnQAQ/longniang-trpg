@@ -7,8 +7,8 @@
 import type { Attribute2, Rarity } from '../shared/rules2';
 
 export type SkillEffect =
-  /** 一次加强的攻击：命中加 hit、伤害加 damage、无视 pierce 点防御。 */
-  | { type: 'strike'; hit: number; damage: number; pierce: number; attribute: 'strength' | 'agility' }
+  /** 一次加强的攻击：命中加 hit、伤害加 damage、无视 pierce 点防御。melee：只能近战（要和敌人站在一起，V1.0.x 站位）。 */
+  | { type: 'strike'; hit: number; damage: number; pierce: number; attribute: 'strength' | 'agility'; melee?: boolean }
   /** 一次攻击打这个地点所有没倒下的敌人（每个敌人分别比防御），伤害减半。 */
   | { type: 'sweep'; attribute: 'strength' | 'agility' | 'will' }
   /** 给身边的一个同伴（或自己）回生命值：2d6 + bonus。 */
@@ -29,7 +29,7 @@ export type SkillEffect =
 export type Skill = { key: string; name: string; attribute: Attribute2; cost: number; effect: SkillEffect; text: string };
 
 export const SKILLS: readonly Skill[] = [
-  { key: 'pojun', name: '破军一击', attribute: 'strength', cost: 3, effect: { type: 'strike', hit: 2, damage: 4, pierce: 0, attribute: 'strength' }, text: '聚力一击：这次近战攻击 +2，打中再多 4 点伤害。' },
+  { key: 'pojun', name: '破军一击', attribute: 'strength', cost: 3, effect: { type: 'strike', hit: 2, damage: 4, pierce: 0, attribute: 'strength', melee: true }, text: '聚力一击：这次近战攻击 +2，打中再多 4 点伤害。' },
   { key: 'kaishan', name: '开山劲', attribute: 'strength', cost: 2, effect: { type: 'story', bonus: 3 }, text: '一身蛮力：破门、推石、扛起重物这类力气活 +3。' },
   { key: 'jinzhong', name: '金钟罩', attribute: 'constitution', cost: 3, effect: { type: 'ward', value: 3 }, text: '运气护体：这场战斗里自己或一个同伴的护甲再 +3。' },
   { key: 'guixi', name: '龟息功', attribute: 'constitution', cost: 2, effect: { type: 'story', bonus: 3 }, text: '闭气凝神：憋气、抗毒、熬过寒热这类硬撑的事 +3。' },

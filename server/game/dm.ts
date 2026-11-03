@@ -189,6 +189,8 @@ export async function estimateMinutes(opts: {
   content: string;
   /** 交给 AI 演的身份（V0.8.0 AI 补位）。 */
   companions?: CompanionBrief[];
+  /** 地图（V1.0.x）：他自己的地图上从这里到各处要多久（map-view.ts 的 knownRoutesText）。 */
+  routes?: string;
   meta: CallMeta;
   signal?: AbortSignal;
 }): Promise<{ minutes: number; reason: string; kind: 'action' | 'question' }> {
@@ -198,7 +200,7 @@ export async function estimateMinutes(opts: {
       // 会先思考的模型（DeepSeek）思考也算在里面：给够，按实际用掉的收费
       max_tokens: 8000,
       system: [{ type: 'text', text: ESTIMATE_SYSTEM }],
-      messages: [{ role: 'user', content: buildEstimateContext(opts.scenario, opts.actor, opts.content, opts.companions) }],
+      messages: [{ role: 'user', content: buildEstimateContext(opts.scenario, opts.actor, opts.content, opts.companions, opts.routes) }],
       output_config: { format: { type: 'json_schema', schema: ESTIMATE_SCHEMA } },
     },
     opts.meta,

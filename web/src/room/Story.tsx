@@ -333,6 +333,19 @@ function Narration({ entry, data }: { entry: LogEntry; data: LogData | null }) {
       </li>
     );
   }
+  // 站位（V1.0.x）：身边的人看到的小动作（两个人在说悄悄话）
+  if (data?.type === 'aside') {
+    return (
+      <li className="entry entry-give">
+        <span>
+          {entry.gameTime !== null && `${formatGameTime(entry.gameTime)} · `}
+          {entry.text}
+          <span className="private-mark">身边的人才看得到</span>
+        </span>
+        <Time entry={entry} />
+      </li>
+    );
+  }
   if (data?.type === 'give') {
     return (
       <li className="entry entry-give">
@@ -371,6 +384,16 @@ function Narration({ entry, data }: { entry: LogEntry; data: LogData | null }) {
           <HighlightStar entry={entry} />
         </div>
         <p className="turn-action">{data.action}</p>
+        {/* AI 角色（V1.1.0）一起交的行动 */}
+        {data.companions?.map((c, i) => (
+          <p key={`ai-${i}`} className="turn-companion">
+            <span className="turn-companion-name">
+              <span className="tag ai-tag">AI</span>
+              {c.name}
+            </span>
+            <span className="turn-action">{c.action}</span>
+          </p>
+        ))}
         {data.rolls.map((roll, i) => (
           <RollView key={i} roll={roll} entryId={entry.id} />
         ))}

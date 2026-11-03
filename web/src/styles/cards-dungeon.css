@@ -265,6 +265,35 @@
   color: var(--seal);
 }
 
+/* 站位（V1.0.x）：谁和谁站在一起 */
+.combat-spots {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+
+.combat-spot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 8px;
+}
+
+.combat-spot dt {
+  min-width: 4.5em;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.combat-spot dd {
+  margin: 0;
+}
+
+.combat-spot .is-enemy {
+  color: var(--seal);
+}
+
 .combat-enemies {
   display: flex;
   flex-direction: column;

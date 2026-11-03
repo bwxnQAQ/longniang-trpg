@@ -21,7 +21,8 @@ import { money, saveFile } from '../format';
 import { live, useLiveEvent, useLiveLost, useLiveOpen } from '../live';
 import { Link, navigate } from '../router';
 import { CatchupPanel } from '../room/Catchup';
-import { Composer } from '../room/Composer';
+import { Composer, fillComposer } from '../room/Composer';
+import { MapPanel } from '../room/MapPanel';
 import { HostTools } from '../room/Host';
 import { Nearby } from '../room/Nearby';
 import { ChatPanel, ModelOptions, NotesPanel, SettingsPanel } from '../room/Panels';
@@ -41,8 +42,8 @@ import { formatGameTime } from '../../../shared/game';
 // 右边是「聊天」（成员和场外聊天）、「角色」「线索」「笔记」，房主和管理员多「设置」「主持」。
 // 不是成员的人（公开对局的观看者、管理员）只看得到大家都看得到的故事。
 
-type Tab = 'chat' | 'sheet' | 'clues' | 'notes' | 'highlights' | 'settings' | 'host';
-const TAB_LABEL: Record<Tab, string> = { chat: '聊天', sheet: '角色', clues: '线索', notes: '笔记', highlights: '名场面', settings: '设置', host: '主持' };
+type Tab = 'chat' | 'sheet' | 'map' | 'clues' | 'notes' | 'highlights' | 'settings' | 'host';
+const TAB_LABEL: Record<Tab, string> = { chat: '聊天', sheet: '角色', map: '地图', clues: '线索', notes: '笔记', highlights: '名场面', settings: '设置', host: '主持' };
 
 const StoryLog = memo(StoryLogView);
 
@@ -51,7 +52,10 @@ function tabsOf(detail: RoomDetail): Tab[] {
   const member = viewer.role !== null;
   const preparing = room.status === 'preparing';
   const tabs: Tab[] = ['chat'];
-  if (member && !preparing) tabs.push('sheet', 'clues');
+  if (member && !preparing) tabs.push('sheet');
+  // 地图（V1.0.x）：开局以后成员、不在这一局里玩的管理员看得到；结束了谁都看得到整张
+  if (!preparing && (member || viewer.manager || room.status === 'ended')) tabs.push('map');
+  if (member && !preparing) tabs.push('clues');
   if (member) tabs.push('notes');
   // 名场面（V0.8.0）：成员收藏的条目
   if (member && !preparing) tabs.push('highlights');
@@ -763,6 +767,17 @@ export function RoomPage({ id }: { id: number }) {
                 />
               )}
               {t === 'sheet' && <CharacterSheet game={game} roomId={id} canGive={room.status === 'running'} onChanged={() => void loadGame()} />}
+              {t === 'map' &&
+                (game.map ? (
+                  <MapPanel
+                    view={game.map}
+                    descriptions={Object.fromEntries([...(me?.visited ?? []), ...(me?.location ? [me.location] : [])].map((p) => [p.key, p.description]))}
+                    canAct={room.status === 'running' && !!me && !me.dead && !game.myAction}
+                    onWrite={me && room.status !== 'ended' ? fillComposer : undefined}
+                  />
+                ) : (
+                  <p className="placeholder">这一局没有地图。</p>
+                ))}
               {t === 'clues' && (
                 <CluesPanel
                   roomId={id}

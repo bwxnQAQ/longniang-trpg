@@ -1,4 +1,6 @@
 import { CATEGORY_KEYS, RELATION_LABEL, type Relation, type ScenarioCategory } from '../../shared/game';
+import { MAP_SIZE } from '../../shared/map';
+import { MIDDLE, SPOT_FLAGS, SPOT_NAME_MAX, SPOTS_MAX, type Spot } from '../../shared/spots';
 import {
   ATTRIBUTE_KEYS,
   MODIFIER_MAX,
@@ -122,8 +124,17 @@ export type Location = {
   key: string;
   name: string;
   description: string;
-  exits: { to: string; minutes: number }[];
+  /** 出口：通向哪里、路上几分钟。hidden（V1.0.x）：暗门、暗道，角色发现了才画在地图上、才走得通。 */
+  exits: { to: string; minutes: number; hidden?: boolean }[];
   features: string[];
+  /** 地图上的位置（V1.0.x，0～100，可选，两个一起写）：不写的按路程远近自动摆。 */
+  x?: number;
+  y?: number;
+  /** 站位（V1.0.x，可选）：这个地点里能站的几处，带上属性（嘈杂、昏暗、掩体）。 */
+  spots?: Spot[];
+  /** 整个地点嘈杂、昏暗（V1.0.x，可选）：站在哪都一样。 */
+  noisy?: boolean;
+  dark?: boolean;
 };
 
 export type Clue = {
@@ -327,6 +338,17 @@ class Reader {
     return v;
   }
 
+  /** 数（可以有小数），保留一位小数。 */
+  num(o: Obj, key: string, path: string, min: number, max: number): number {
+    const v = o[key];
+    if (typeof v !== 'number' || !Number.isFinite(v)) {
+      this.error(`${path}.${key}`, '应该是数字');
+      return min;
+    }
+    if (v < min || v > max) this.error(`${path}.${key}`, `要在 ${min}～${max} 之间`);
+    return Math.round(Math.min(max, Math.max(min, v)) * 10) / 10;
+  }
+
   bool(o: Obj, key: string, path: string): boolean {
     const v = o[key];
     if (typeof v !== 'boolean') {
@@ -500,17 +522,46 @@ export function validateScenario(data: unknown): ValidationResult {
   const locations: Location[] = r.arr(root, 'locations', '剧本', 1, 40).map((v, i) => {
     const p = `locations[${i}]`;
     const o = r.obj(v, p);
-    return {
+    const loc: Location = {
       key: r.key(o, p),
       name: r.str(o, 'name', p, 20),
       description: r.str(o, 'description', p, 600),
       exits: r.arr(o, 'exits', p, 0, 12).map((e, j) => {
         const ep = `${p}.exits[${j}]`;
         const eo = r.obj(e, ep);
-        return { to: r.str(eo, 'to', ep, 40), minutes: r.int(eo, 'minutes', ep, 1, 1440) };
+        const exit: Location['exits'][number] = { to: r.str(eo, 'to', ep, 40), minutes: r.int(eo, 'minutes', ep, 1, 1440) };
+        // 暗门、暗道（V1.0.x）：只认 true；不是暗道就不写
+        if (eo.hidden !== undefined && eo.hidden !== null && r.bool(eo, 'hidden', ep)) exit.hidden = true;
+        return exit;
       }),
       features: o.features === undefined ? [] : r.strList(o, 'features', p, 12, 200),
     };
+    // 站位（V1.0.x）：名字（同一个地点里不重复）和属性；属性只认 true
+    if (o.spots !== undefined && o.spots !== null) {
+      const spots = r.arr(o, 'spots', p, 0, SPOTS_MAX).map((v, k) => {
+        const sp = `${p}.spots[${k}]`;
+        const so = r.obj(v, sp);
+        const spot: Spot = { name: r.str(so, 'name', sp, SPOT_NAME_MAX) };
+        if (spot.name.trim() === MIDDLE) r.error(`${sp}.name`, `站位不能叫「${MIDDLE}」：那是没特别站在哪`);
+        for (const f of SPOT_FLAGS) if (so[f] !== undefined && so[f] !== null && r.bool(so, f, sp)) spot[f] = true;
+        return spot;
+      });
+      const names = spots.map((x) => x.name);
+      names.forEach((n, k) => {
+        if (n && names.indexOf(n) !== k) r.error(`${p}.spots[${k}].name`, `站位「${n}」重复了`);
+      });
+      if (spots.length) loc.spots = spots;
+    }
+    for (const f of ['noisy', 'dark'] as const) if (o[f] !== undefined && o[f] !== null && r.bool(o, f, p)) loc[f] = true;
+    // 地图上的位置（V1.0.x）：x、y 一起写，0～100
+    const hasX = o.x !== undefined && o.x !== null;
+    const hasY = o.y !== undefined && o.y !== null;
+    if (hasX !== hasY) r.error(hasX ? `${p}.y` : `${p}.x`, '地图上的位置要 x、y 一起写（都是 0～100），不定位置就都不写');
+    else if (hasX) {
+      loc.x = r.num(o, 'x', p, 0, MAP_SIZE);
+      loc.y = r.num(o, 'y', p, 0, MAP_SIZE);
+    }
+    return loc;
   });
 
   const truthObj = r.obj(root.truth, 'truth');
@@ -656,6 +707,18 @@ export function validateScenario(data: unknown): ValidationResult {
       }
     });
   });
+  // 地图上的位置（V1.0.x）：写了一部分的，没写的自动摆；叠在一起的看不清
+  const placed = locations.filter((l) => l.x !== undefined && l.y !== undefined);
+  if (placed.length && placed.length < locations.length) {
+    r.warn('locations', `有${locations.length - placed.length}个地点没写地图上的位置（x、y），会按路程自动摆`);
+  }
+  for (let a = 0; a < placed.length; a++) {
+    for (let b = a + 1; b < placed.length; b++) {
+      if (Math.hypot(placed[a].x! - placed[b].x!, placed[a].y! - placed[b].y!) < 5) {
+        r.warn(`locations[${locations.indexOf(placed[b])}]`, `「${placed[a].name}」和「${placed[b].name}」在地图上几乎叠在一起，挪开一点`);
+      }
+    }
+  }
 
   clues.forEach((clue, i) => {
     if (clue.location && !locationKeys.has(clue.location)) r.error(`clues[${i}].location`, `没有这个地点「${clue.location}」`);

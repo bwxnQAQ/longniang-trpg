@@ -545,6 +545,8 @@ export type Monster5eState = {
   usedPerDay: Record<string, number>;
   /** 主持人记在它身上的事（剧本里的计数、机关进度），一直写在「正在打的仗」里。 */
   mark?: string;
+  /** 站位（V1.0.x）：在这个地点里站在哪；没写是在大家中间。 */
+  spot?: string | null;
 };
 
 /** 一场 5E 战斗：在哪、第几轮、先攻顺序、这一轮谁已经行动过、怪物。 */

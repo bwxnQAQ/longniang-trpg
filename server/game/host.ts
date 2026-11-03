@@ -130,6 +130,7 @@ export class HostTools {
         a.conditions === b.conditions &&
         a.items === b.items &&
         a.location === b.location &&
+        (a.spot ?? null) === (b.spot ?? null) &&
         a.visited === b.visited &&
         a.dead === b.dead &&
         (a.v2 ?? null) === (b.v2 ?? null) &&
@@ -270,14 +271,15 @@ export class HostTools {
         if (owner) refund.run(owner.user_id, u.item);
       }
     }
+    // 站位（V1.0.x）也退回去：早先的快照没记站位，那时大家都在大家中间
     const restoreCharacter = db.prepare(
-      'UPDATE characters SET wounds = ?, stress = ?, conditions = ?, items = ?, location = ?, visited = ?, dead = ?, v2 = COALESCE(?, v2), v5 = COALESCE(?, v5) WHERE id = ? AND room_id = ?',
+      'UPDATE characters SET wounds = ?, stress = ?, conditions = ?, items = ?, location = ?, spot = ?, visited = ?, dead = ?, v2 = COALESCE(?, v2), v5 = COALESCE(?, v5) WHERE id = ? AND room_id = ?',
     );
     // 只退回这次结算改过的角色（早先的快照没记，就全部退回）
     const touched = s.after ? new Set(s.after.map((c) => c.id)) : null;
     for (const c of s.characters) {
       if (touched && !touched.has(c.id)) continue;
-      restoreCharacter.run(c.wounds, c.stress, c.conditions, c.items, c.location, c.visited, c.dead, c.v2 ?? null, c.v5 ?? null, c.id, roomId);
+      restoreCharacter.run(c.wounds, c.stress, c.conditions, c.items, c.location, c.location ? (c.spot ?? null) : null, c.visited, c.dead, c.v2 ?? null, c.v5 ?? null, c.id, roomId);
     }
 
     // 时钟：退回这次结算让它往前跳的那一段，之后（现实时间里）走过的照样算
@@ -469,6 +471,8 @@ export class HostTools {
         const from = scenario.locations.find((l) => l.key === before.location)?.name ?? '不知道在哪';
         changes.push(`位置：${from} → ${place.name}`);
         c.location = key;
+        // 换了地点：站位（V1.0.x）清空
+        c.spot = null;
         if (!c.visited.includes(key)) c.visited = [...c.visited, key];
       }
     }
@@ -705,7 +709,8 @@ export class HostTools {
       case 'role':
         return [`**身份${who}**`, '', row.text];
       case 'resolution': {
-        const out = [`**${data.actor}**${who}：${data.action}`, '', row.text];
+        // AI 角色（V1.1.0）一起交的行动跟在后面
+        const out = [`**${data.actor}**${who}：${data.action}`, ...(data.companions ?? []).flatMap((c) => ['', `**${c.name}**（AI 角色）：${c.action}`]), '', row.text];
         for (const r of data.rolls) out.push('', `- 检定：${r.who}（${r.reason}）${r.dice.join('+')} → ${r.total}`);
         // 管理员看到全部角色拿到的线索和变化；玩家只有自己的
         const s = stored?.type === 'resolution' ? stored : null;

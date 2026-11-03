@@ -1,0 +1,20 @@
+龙娘跑团
+Copyright (C) 2026 花崎诗奏
+
+这个项目（代码、自带的剧本、图标）按 GNU Affero General Public License v3.0 开放，全文见 LICENSE。
+
+正式版只在 GitHub 上的 bwxnQAQ/longniang-trpg 发布：https://github.com/bwxnQAQ/longniang-trpg
+别人改过、重新打包的版本（包括安装包）不是作者发的，用的时候有问题请找发布它的人。
+
+按 AGPL-3.0，分发这个项目（原样的、改过的、打成安装包的）要保留版权和许可证的说明，并且提供对应的源代码；
+改过的版本要标明改过；改过的版本拿去开网站给别人用，也要把改过的源代码提供给用的人。
+
+5E 规则的内容（shared/5e/、server/5e/ 里的规则数据和说明，写剧本 skill 里的怪物表、物品表）译自 SRD 5.2.1，有删改，按 CC BY 4.0 授权：
+This work includes material from the System Reference Document 5.2.1 ("SRD 5.2.1") by Wizards of the Coast LLC, available at https://www.dndbeyond.com/srd. The SRD 5.2.1 is licensed under the Creative Commons Attribution 4.0 International License, available at https://creativecommons.org/licenses/by/4.0/legalcode.
+
+----
+
+Longniang TRPG
+Copyright (C) 2026 花崎诗奏
+Licensed under the GNU Affero General Public License v3.0 (see LICENSE).
+Official releases are published only at https://github.com/bwxnQAQ/longniang-trpg. Modified versions, repackaged builds and installers made by others are not published by the author.

@@ -1,9 +1,14 @@
 // 对局进行中，服务器发给网页的数据格式。服务器和网页共用这一份。
+import type { PersonaBrief } from './personas';
 import type { AttributeKey, Outcome } from './rules';
+import type { SpotFlag, SpotView } from './spots';
 import type { GearView } from './gear2';
 import type { Attributes2, ConsumableKey, DungeonSize, EnemyTier } from './rules2';
 import type { Abilities, Ability, Condition5e, Skill } from './5e/core';
 import type { AttackOption, ResourceInfo } from './5e/types';
+import type { MapView } from './map';
+
+export type { SpotView };
 
 export type Relation = 'coop' | 'secrets' | 'versus';
 export const RELATION_LABEL: Record<Relation, string> = { coop: '合作', secrets: '各有秘密', versus: '互相对立' };
@@ -88,7 +93,11 @@ export type Pregen5eView = {
 };
 
 /** AI 补位（V0.8.0）：房主交给 AI 演的身份。主持人顺带演，跟着大家走，不是玩家的角色。 */
-export type Companion = { roleKey: string; roleName: string; name: string };
+/** persona（V1.1.0 AI 大厅）：请了 AI 角色来演的，是它请进来时的名字、简介和作者（自己演，每一轮自己交行动）；主持人顺带演的是 null。 */
+export type Companion = { roleKey: string; roleName: string; name: string; persona: PersonaBrief | null };
+
+/** 和你在同一个地点的 AI 队友（V1.1.0）：persona 是请了 AI 角色来演的。 */
+export type NearbyCompanion = { roleKey: string; name: string; roleName: string; persona: boolean };
 
 export type Condition = { name: string; effect: string; penalty: number };
 
@@ -97,7 +106,11 @@ export type PlaceInfo = {
   name: string;
   description: string;
   exits: { key: string; name: string; minutes: number }[];
+  /** 站位（V1.0.x）：剧本给这个地点写的站位和属性；flags 是整个地点的属性（嘈杂、昏暗）。 */
+  spots: SpotView[];
+  flags: SpotFlag[];
 };
+
 
 export type MyCharacter = {
   id: number;
@@ -116,6 +129,8 @@ export type MyCharacter = {
   conditions: Condition[];
   items: string[];
   location: PlaceInfo | null;
+  /** 站位（V1.0.x）：在这个地点里站在哪；null 是在大家中间。 */
+  spot: string | null;
   visited: PlaceInfo[];
   dead: boolean;
   /** 现在不能行动的原因，能行动时是 null。 */
@@ -191,8 +206,9 @@ export type Character5eView = {
 /** 5E 的战斗（和你在同一个地点的，V0.9.0）：第几轮、先攻、敌人。 */
 export type Fight5eView = {
   round: number;
-  order: { name: string; side: 'ally' | 'enemy'; initiative: number; acted: boolean; down: boolean }[];
-  monsters: { id: string; name: string; hp: number; hpMax: number; conditions: string[]; defeated: boolean; fled?: boolean }[];
+  /** spot：站位（V1.0.x），null 是在大家中间。 */
+  order: { name: string; side: 'ally' | 'enemy'; initiative: number; acted: boolean; down: boolean; spot: string | null }[];
+  monsters: { id: string; name: string; hp: number; hpMax: number; conditions: string[]; defeated: boolean; fled?: boolean; spot: string | null }[];
 };
 
 /** 地下城里自己角色的状态（规则第二版）。 */
@@ -243,8 +259,8 @@ export type DungeonView = {
 };
 
 export type CombatView = {
-  /** 先后手：从先到后（角色、敌人混在一起）。 */
-  order: { name: string; side: 'ally' | 'enemy'; initiative: number }[];
+  /** 先后手：从先到后（角色、敌人混在一起）。spot：站位（V1.0.x），null 是在大家中间；down：倒下了。 */
+  order: { name: string; side: 'ally' | 'enemy'; initiative: number; spot: string | null; down: boolean }[];
   enemies: EnemyView[];
 };
 
@@ -259,6 +275,8 @@ export type EnemyView = {
   fled?: boolean;
   /** 首领的护盾还在：打不动，要大家配合破开。 */
   shielded: boolean;
+  /** 站位（V1.0.x），null 是在大家中间。 */
+  spot: string | null;
 };
 
 /** 带进剧本的宠物：带进来那一刻的名字和介绍。 */
@@ -341,6 +359,8 @@ export type NearbyCharacter = {
   id: number;
   name: string;
   roleName: string;
+  /** 站位（V1.0.x）：null 是在大家中间。同一个站位的才是身边的人（悄悄话只能说给他们）。 */
+  spot: string | null;
   action: {
     id: number;
     /** 悄悄做的是 null。 */
@@ -399,6 +419,13 @@ export type GameState = {
   others: OtherCharacter[];
   /** 交给 AI 演的身份（V0.8.0 AI 补位），按剧本里身份的顺序。 */
   companions: Companion[];
+  /** 和你在同一个地点、还活着的 AI 队友（V1.1.0；你没有角色、不在任何地点时是空的）。 */
+  nearbyCompanions: NearbyCompanion[];
+  /**
+   * 地图（V1.0.x）：开局以后成员看得到自己（合作的剧本里一队人）走过的那一部分；对局结束了、不在这一局里玩的管理员看整张。
+   * 准备阶段、没有角色的观看者是 null。
+   */
+  map: MapView | null;
   myAction: MyAction | null;
   /** 和你在同一个地点的其他角色（你没有角色、不在任何地点时是空的）。 */
   nearby: NearbyCharacter[];
@@ -565,6 +592,8 @@ export type LogData =
       secret?: boolean;
       /** 地下城里大家都看得到的战况（V0.7.0）：开打、先后手、敌人倒下、用了道具、捡到东西。 */
       events?: string[];
+      /** 和这个行动一起结算的 AI 角色的行动（V1.1.0 AI 大厅）：它自己交的。 */
+      companions?: { name: string; action: string }[];
     }
   | { type: 'private'; gameTime: number | null }
   /** 有人把线索告诉了别人：只有分享的人和收到的人看得到。 */
@@ -575,7 +604,9 @@ export type LogData =
   /** 角色当面说的话（对白）：同一地点的角色都听得到；to 不是空的是悄悄话，只有对方听得到。 */
   | { type: 'say'; speaker: string; to: string | null }
   /** 把东西交给同一地点的另一个角色。 */
-  | { type: 'give'; from: string; to: string; item: string };
+  | { type: 'give'; from: string; to: string; item: string }
+  /** 身边的人看到的一个小动作（V1.0.x 站位）：两个人在说悄悄话（听不到内容）。只给看到的人。 */
+  | { type: 'aside' };
 
 // ---------- 游戏时间 ----------
 

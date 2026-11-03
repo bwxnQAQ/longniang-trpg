@@ -19,10 +19,11 @@ import {
  * AI 的几种用途。主持（结算行动）、生成剧本、杂活（估时、场外问答、摘要）、内容检查可以分别用不同的模型。
  * 内容检查（moderation）是发给主持 AI 之前，先看一眼有没有违规（默认也用 Opus，看得最准）。
  */
-export type AiPurpose = 'resolve' | 'estimate' | 'answer' | 'summary' | 'scenario' | 'moderation' | 'guide' | 'review';
+export type AiPurpose = 'resolve' | 'estimate' | 'answer' | 'summary' | 'scenario' | 'moderation' | 'guide' | 'review' | 'companion';
 /**
  * guide：网站向导（V0.6.0），正式用户问网站的事，花他自己的额度。
  * review：AI 审核（V0.6.0），投稿、举报交上来先看一遍，把意见给管理员（花网站的钱，最后由管理员裁决）。
+ * companion：AI 角色（V1.1.0 AI 大厅）每一轮照人设交的行动，算杂活（用便宜的模型），这一局的玩家平摊。
  */
 export type AiRole = 'dm' | 'scenario' | 'misc' | 'guard' | 'guide' | 'review';
 
@@ -40,6 +41,7 @@ const ROLE_OF: Record<AiPurpose, AiRole> = {
   moderation: 'guard',
   guide: 'guide',
   review: 'review',
+  companion: 'misc',
 };
 
 export type AiSettings = {
