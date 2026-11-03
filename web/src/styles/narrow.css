@@ -1,0 +1,179 @@
+/* ---------- 窄屏 ---------- */
+
+@media (max-width: 900px) {
+  .room {
+    height: auto;
+    min-height: 0;
+  }
+
+  .room-body {
+    grid-template-columns: 1fr;
+  }
+
+  .log {
+    min-height: 280px;
+    max-height: 60dvh;
+  }
+
+  .tab-panel {
+    overflow: visible;
+  }
+
+  .tab-panel-chat .log {
+    min-height: 240px;
+  }
+
+  .setup-column {
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .host-controls {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .topbar-inner {
+    padding: 8px 16px;
+  }
+
+  .brand-name {
+    display: none;
+  }
+
+  .topbar-inner {
+    gap: 8px;
+  }
+
+  .topbar-start {
+    gap: 6px;
+  }
+
+  .nav-arrow {
+    width: 28px;
+  }
+
+  .topnav a,
+  .linklike {
+    padding: 6px 6px;
+    font-size: 13px;
+  }
+
+  .nav-logout {
+    display: none;
+  }
+
+  /* 显示名太长时截断，免得顶栏挤成两行 */
+  .nav-account {
+    display: inline-block;
+    max-width: 6em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
+  }
+
+  .page {
+    padding: 24px 16px 48px;
+  }
+
+  .page-wide {
+    padding: 16px;
+  }
+
+  .page-head h1 {
+    font-size: 28px;
+  }
+
+  .room-row {
+    padding: 14px 4px;
+  }
+
+  .room-title {
+    font-size: 26px;
+  }
+
+  .composer-foot {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .composer-foot .btn {
+    align-self: flex-end;
+  }
+
+  .attr-row {
+    grid-template-columns: 3.5em 1fr 72px;
+  }
+
+  .attr-covers {
+    font-size: 12px;
+  }
+
+  .specialty-inputs {
+    grid-template-columns: 1fr;
+  }
+
+  .opening-title {
+    font-size: 24px;
+  }
+}
+
+/* “我的对局”每一局下面的待办：要你做的事用墨色加粗，新进展用描金，出错用朱红，等待中用灰色 */
+.room-row-todo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  margin-top: 2px;
+  font-size: 13px;
+}
+
+.todo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.todo.is-yours {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.todo.is-yours::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border: 1.5px solid var(--ink);
+  border-radius: 1px;
+  transform: rotate(45deg);
+}
+
+.todo.is-new {
+  color: var(--gold-deep);
+  font-weight: 600;
+}
+
+.todo.is-new::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--gold);
+}
+
+.todo.is-alert {
+  color: var(--seal);
+  font-weight: 600;
+}
+
+.todo.is-wait {
+  color: var(--muted);
+}
+
+@media (prefers-color-scheme: dark) {
+  .todo.is-new {
+    color: var(--gold);
+  }
+}

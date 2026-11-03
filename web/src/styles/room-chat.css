@@ -1,0 +1,603 @@
+/* ---------- 对局页面：观看、中途加入、在场的人、对白 ---------- */
+
+.watch-banner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin: 12px 0 4px;
+  padding: 10px 14px;
+  border-left: 3px solid var(--focus);
+  background: var(--paper-2);
+  font-size: 14px;
+}
+
+.watch-banner-text {
+  display: flex;
+  flex: 1 1 280px;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.setup-column .watch-banner {
+  margin-top: 16px;
+}
+
+.late-join {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding: 14px 0 4px;
+  border-top: 1px solid var(--rule);
+}
+
+.late-join p {
+  flex: 1 1 260px;
+  color: var(--ink-soft);
+}
+
+.nearby {
+  flex: none;
+  border-top: 1px solid var(--rule);
+}
+
+.nearby-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nearby-head .muted {
+  font-weight: 400;
+}
+
+.nearby-chevron {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.15s;
+}
+
+.nearby-head[aria-expanded='false'] .nearby-chevron {
+  transform: rotate(-90deg);
+}
+
+.nearby-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 190px;
+  margin: 0 0 8px;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.nearby-row {
+  display: grid;
+  grid-template-columns: minmax(6em, max-content) minmax(0, 1fr);
+  gap: 4px 14px;
+  padding: 7px 10px;
+  border-left: 2px solid var(--rule-strong);
+  background: var(--paper-2);
+  font-size: 13px;
+}
+
+.nearby-who {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.45;
+}
+
+.nearby-who strong {
+  font-family: var(--font-story);
+  font-size: 15px;
+}
+
+.nearby-action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.assist-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.assist-form input:not([type='checkbox']) {
+  flex: 1 1 160px;
+  min-height: 30px;
+  padding: 3px 8px;
+  font-size: 13px;
+}
+
+.assist-form .hint {
+  flex-basis: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nearby-chevron {
+    transition: none;
+  }
+}
+
+.composer-modes {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.composer-to {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.composer-to select {
+  width: auto;
+  min-height: 30px;
+  padding: 2px 8px;
+  font-size: 13px;
+}
+
+.composer-buttons {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+}
+
+.composer-secret {
+  padding: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.composer-secret input {
+  margin-top: 4px;
+}
+
+/* 角色当面说的话：描金的边线；悄悄话用虚线 */
+.entry-say {
+  max-width: 40em;
+  padding-left: 12px;
+  border-left: 2px solid var(--gold);
+}
+
+.entry-say.is-whisper {
+  border-left-style: dashed;
+}
+
+.say-text {
+  font-family: var(--font-story);
+  font-size: 16px;
+  line-height: 1.85;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.entry-give {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 10px;
+  border-left: 2px solid var(--jade);
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+/* 举报别人写的话：指到那一条上才显出来 */
+.entry-report {
+  margin-left: auto;
+  padding: 0 4px;
+  color: var(--muted);
+  font-size: 12px;
+  opacity: 0;
+}
+
+.entry:hover .entry-report,
+.entry:focus-within .entry-report {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .entry-report,
+  .msg-tools {
+    opacity: 1;
+  }
+}
+
+.chip-action {
+  margin-left: 6px;
+  padding: 0;
+  color: var(--gold-deep);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.chip-action:hover {
+  background: none;
+  color: var(--ink);
+}
+
+/* ---------- 对局页面右边：聊天（成员和场外聊天）、设置 ---------- */
+
+.chat-panel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.chat-members {
+  flex: none;
+  max-height: 46%;
+  overflow-y: auto;
+  border-bottom: 1px solid var(--rule);
+}
+
+.chat-members-head {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 0 6px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.chat-members-head .muted {
+  font-weight: 400;
+}
+
+.chat-members-head::after {
+  content: '';
+  align-self: center;
+  width: 7px;
+  height: 7px;
+  margin-left: auto;
+  border-right: 1.5px solid var(--muted);
+  border-bottom: 1.5px solid var(--muted);
+  transform: translateY(-2px) rotate(45deg);
+}
+
+.chat-members-head[aria-expanded='false']::after {
+  transform: rotate(-45deg);
+}
+
+.chat-members .member-list {
+  margin-bottom: 6px;
+}
+
+.chat-members > .hint {
+  padding-bottom: 10px;
+}
+
+.chat-room {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.chat-room .log {
+  padding-top: 10px;
+}
+
+.chat-composer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--rule);
+}
+
+.chat-composer textarea {
+  flex: 1 1 160px;
+  min-height: 48px;
+  resize: none;
+  font-size: 14px;
+}
+
+.chat-composer .form-error {
+  flex-basis: 100%;
+}
+
+/* 成员：头像、名字、房主标记，下面一行是角色和在线情况 */
+.member {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'avatar name tag'
+    'avatar state state';
+}
+
+.member-avatar {
+  grid-area: avatar;
+  align-self: start;
+  margin-top: 2px;
+}
+
+a.member-name {
+  overflow: hidden;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+a.member-name:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--rule-strong);
+}
+
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-section > h2 {
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 15px;
+}
+
+.settings .public-toggle {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.invite-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.invite-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 14px;
+}
+
+.invite-list li > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.invite-list .presence,
+.invite-list .muted {
+  font-size: 12px;
+}
+
+.model-options {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--rule);
+}
+
+.model-options .choice {
+  padding: 8px 2px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.model-options .choice:has(input:checked) {
+  background: var(--paper-2);
+  box-shadow: inset 3px 0 0 var(--ink);
+  padding-left: 10px;
+}
+
+/* 开局的对话框 */
+.start-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.start-dialog-title {
+  margin-top: 6px;
+  font-size: 15px;
+}
+
+.start-warning {
+  padding: 8px 12px;
+  border-left: 3px solid var(--gold);
+  background: color-mix(in srgb, var(--gold) 10%, transparent);
+  font-size: 14px;
+}
+
+/* ---------- 选身份：属性、专长、外貌是剧本定好的，只能看 ---------- */
+
+.role-picker {
+  width: 100%;
+  max-width: 640px;
+}
+
+.role-option {
+  grid-template-areas:
+    'radio name'
+    '. text'
+    '. stats'
+    '. taken';
+}
+
+.role-stats {
+  grid-area: stats;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 6px;
+  font-size: 13px;
+}
+
+.role-attrs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 2px;
+}
+
+.role-attr {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 0 7px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--field);
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.role-attr b {
+  color: var(--ink);
+  font-family: var(--font-story);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.role-line {
+  display: block;
+  color: var(--ink-soft);
+}
+
+.role-label {
+  margin-right: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.my-character .role-public {
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.rename-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.rename-form input:not([type='checkbox']) {
+  width: 14em;
+  min-height: 32px;
+  padding: 4px 10px;
+}
+
+.modal .role-picker {
+  max-width: none;
+}
+
+.modal .role-picker .confirm-bar {
+  margin-top: 0;
+}
+
+/* 观看的人没有场外聊天：成员列表占满 */
+.chat-panel.is-members-only .chat-members {
+  max-height: none;
+  border-bottom: 0;
+}
+
+/* 角色卡：交给别人东西、线索的说明 */
+.sheet-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.clue-hint {
+  margin-bottom: 4px;
+}
+
+.give-link {
+  margin-left: 6px;
+  padding: 0 4px;
+  font-size: 12px;
+}
+
+.give-form {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-left: 6px;
+}
+
+.give-form select {
+  width: auto;
+  min-height: 30px;
+  padding: 2px 8px;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .chat-members {
+    max-height: none;
+  }
+
+  .chat-room .log {
+    min-height: 240px;
+    max-height: 55dvh;
+  }
+}
+
+@media (max-width: 560px) {
+  .composer-to {
+    margin-left: 0;
+  }
+
+  .composer-buttons {
+    justify-content: space-between;
+  }
+
+  .nearby-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

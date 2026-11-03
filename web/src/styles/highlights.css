@@ -1,0 +1,344 @@
+/* ==========================================================================
+   V0.8.0 名场面和战报：记录里的星标、右边的「名场面」列表、跳过去时闪一下、战报对话框
+   星标平时淡淡的，收藏了是描金的实心星；跳到的那一条用金色的底闪一下。
+   ========================================================================== */
+
+:root {
+  --hl-flash: rgb(192 138 44 / 0.2);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --hl-flash: rgb(224 178 90 / 0.18);
+  }
+}
+
+/* ---------- 记录里的星标：不挤占正文，排在那一条的标题行最右边 ---------- */
+
+.hl-star {
+  flex: none;
+  /* 点的地方比看到的星大一圈（手机上好点），上下的负边距让它不撑高这一行 */
+  margin: -2px 0 -2px auto;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.4;
+  cursor: pointer;
+  opacity: 0.5;
+}
+
+.hl-star:hover,
+.hl-star:focus-visible {
+  color: var(--gold-deep);
+  opacity: 1;
+}
+
+.hl-star.is-on {
+  color: var(--gold);
+  opacity: 1;
+}
+
+/* 手机上没有「指上去」：平时也看得清一点 */
+@media (hover: none) {
+  .hl-star {
+    opacity: 0.75;
+  }
+}
+
+/* 别人说的话后面有「举报」（它已经靠右了）：星标紧跟在它后面 */
+.entry-report ~ .hl-star {
+  margin-left: 2px;
+}
+
+/* 开场、结局、只给自己看的便条：标题行不是横排的盒子，星标浮到右边 */
+.opening-label .hl-star,
+.letter-label .hl-star {
+  float: right;
+}
+
+/* 老版本留下的、没有类型的叙述：跟在「朗读」后面 */
+.entry-narration .hl-star {
+  margin-left: 4px;
+}
+
+/* 跳到的那一条闪一下 */
+.entry.is-focused {
+  border-radius: 4px;
+  animation: hl-flash 1.8s ease-out;
+}
+
+@keyframes hl-flash {
+  0%,
+  35% {
+    background-color: var(--hl-flash);
+    box-shadow: 0 0 0 6px var(--hl-flash);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: 0 0 0 6px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entry.is-focused {
+    animation: none;
+    outline: 2px solid var(--gold);
+    outline-offset: 4px;
+  }
+}
+
+/* 页签多了「名场面」：房主有七个页签，字不折成两行 */
+.side .tab {
+  white-space: nowrap;
+}
+
+/* ---------- 右边的「名场面」 ---------- */
+
+.hl-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.hl-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.hl-jump {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 4px 6px;
+  border: 0;
+  border-left: 2px solid var(--gold);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.hl-jump:hover {
+  background: var(--paper-2);
+}
+
+.hl-jump[aria-busy='true'] {
+  cursor: progress;
+}
+
+.hl-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  font-size: 13px;
+}
+
+.hl-time {
+  color: var(--gold-deep);
+  font-family: var(--font-story);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.hl-label {
+  min-width: 0;
+  color: var(--ink-soft);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.hl-action {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hl-text {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  color: var(--ink);
+  font-family: var(--font-story);
+  font-size: 15px;
+  line-height: 1.75;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+/* 跳不过去的（记录太早、没加载到）：在这里展开全文 */
+.hl-text.is-open {
+  display: block;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+}
+
+.hl-item .hl-star {
+  margin: 4px 0 0;
+}
+
+/* ---------- 战报对话框：左边是预览，右边选名场面、存图；窄屏上下排，「保存图片」贴在对话框底边 ---------- */
+
+.zhanbao {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  grid-template-rows: auto 1fr;
+  align-items: start;
+  gap: 16px 20px;
+}
+
+.zhanbao-preview {
+  grid-row: 1 / span 2;
+  display: flex;
+  justify-content: center;
+  padding: 12px;
+  border-radius: var(--radius);
+  background: var(--paper-2);
+}
+
+.zhanbao-save {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.zhanbao-canvas {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: min(66dvh, 620px);
+  border: 1px solid var(--rule-strong);
+}
+
+.zhanbao-options {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.zhanbao-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.zhanbao-picks {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.zhanbao-picks legend {
+  margin-bottom: 6px;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.zhanbao-picks ul {
+  max-height: 320px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  border-top: 1px solid var(--rule);
+  list-style: none;
+}
+
+.zhanbao-pick {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 2px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.zhanbao-pick input {
+  flex: none;
+  margin-top: 3px;
+}
+
+.zhanbao-pick-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.zhanbao-pick-label {
+  color: var(--ink-soft);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.zhanbao-pick-snippet {
+  overflow: hidden;
+  color: var(--muted);
+  font-family: var(--font-story);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zhanbao-pick:has(input:disabled) {
+  cursor: default;
+  opacity: 0.55;
+}
+
+@media (max-width: 640px) {
+  .zhanbao {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+  }
+
+  .zhanbao-preview,
+  .zhanbao-save {
+    grid-row: auto;
+    grid-column: auto;
+  }
+
+  .zhanbao-save {
+    position: sticky;
+    bottom: 0;
+    margin: 0 -24px -24px;
+    padding: 10px 24px 24px;
+    border-top: 1px solid var(--rule);
+    background: var(--paper);
+  }
+
+  .zhanbao-canvas {
+    max-height: 58dvh;
+  }
+}
+
+/* 对话框在这个宽度以下左右只留 16px（dialogs.css） */
+@media (max-width: 560px) {
+  .zhanbao-save {
+    margin: 0 -16px -16px;
+    padding: 10px 16px 16px;
+  }
+
+  .zhanbao-picks ul {
+    max-height: 240px;
+  }
+}

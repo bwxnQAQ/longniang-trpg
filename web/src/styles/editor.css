@@ -1,0 +1,782 @@
+/* ==========================================================================
+   V0.8.0 网页剧本编辑器：草稿列表（/editor）、编辑页（/editor/:id）——
+   上面是检查结果，左边一列分区（手机上是顶上的一排），右边是这一分区的表单；JSON 分区是整份原文
+   ========================================================================== */
+
+/* ---------- 草稿列表 ---------- */
+
+.editor-new {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 32px;
+}
+
+.editor-drafts-count {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.draft-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--rule);
+}
+
+.draft-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.draft-title {
+  flex: 1 1 14em;
+  min-width: 0;
+  font-family: var(--font-story);
+  font-size: 17px;
+  font-weight: 600;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.draft-title:hover {
+  text-decoration: underline;
+}
+
+.draft-time {
+  font-size: 13px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 编辑页：页头 ---------- */
+
+.ed-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin-bottom: 14px;
+}
+
+.ed-head-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ed-title {
+  font-family: var(--font-story);
+  font-size: 28px;
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
+}
+
+.ed-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ed-saved {
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.ed-saved.is-dirty {
+  color: var(--gold-deep);
+  font-weight: 600;
+}
+
+.ed-saved.is-dirty::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  vertical-align: 1px;
+}
+
+.ed-error {
+  margin: 0 0 12px;
+}
+
+/* 上次没保存、暂存在浏览器里的：恢复、丢掉 */
+.ed-restore {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin: 0 0 14px;
+  padding: 8px 14px;
+  border: 1px solid var(--rule);
+  border-left: 4px solid var(--gold);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: color-mix(in srgb, var(--gold) 8%, var(--field));
+  font-size: 14px;
+}
+
+.ed-restore > span:first-child {
+  flex: 1 1 14em;
+}
+
+/* 窄屏放不下时，时间整个换到下一行 */
+.ed-restore .muted {
+  display: inline-block;
+}
+
+/* 快到上限了：剧本有多大 */
+.ed-size {
+  color: var(--gold-deep);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ed-start-panel {
+  margin-bottom: 18px;
+}
+
+/* ---------- 检查结果 ---------- */
+
+.ed-check-bar {
+  --tone: var(--rule-strong);
+  margin: 0 0 18px;
+  padding: 9px 14px;
+  border: 1px solid var(--rule);
+  border-left: 4px solid var(--tone);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--field);
+}
+
+.ed-check-bar.is-ok {
+  --tone: var(--jade);
+}
+
+.ed-check-bar.is-warn {
+  --tone: var(--gold);
+}
+
+.ed-check-bar.is-bad {
+  --tone: var(--seal);
+}
+
+.ed-check-line {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+
+.ed-check-status {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--tone);
+  font-size: 15px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.ed-check-bar.is-wait .ed-check-status {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+button.ed-check-status {
+  cursor: pointer;
+}
+
+/* 能展开、收起问题列表的：后面一个小三角 */
+button.ed-check-status::after {
+  content: '';
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-left: 8px;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid currentColor;
+  vertical-align: 2px;
+}
+
+button.ed-check-status[aria-expanded='false']::after {
+  transform: rotate(-90deg);
+}
+
+.ed-checking {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.ed-summary {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.ed-problems {
+  max-height: 13.5em;
+  margin: 8px 0 2px;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  border-top: 1px solid var(--rule);
+}
+
+.ed-problem {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  width: 100%;
+  padding: 5px 4px;
+  border: 0;
+  border-bottom: 1px dashed var(--rule);
+  background: none;
+  color: var(--ink);
+  font-size: 13.5px;
+  line-height: 1.55;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ed-problem:hover {
+  background: var(--paper-2);
+}
+
+.ed-problem-tag {
+  flex: none;
+  padding: 0 6px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.ed-problem.is-error .ed-problem-tag {
+  color: var(--seal);
+}
+
+.ed-problem.is-warning .ed-problem-tag {
+  color: var(--gold-deep);
+}
+
+.ed-problem-where {
+  flex: none;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.ed-problem-text {
+  flex: 1 1 18em;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* 列不完的：最后一行写还有几条 */
+.ed-problems-more {
+  padding: 5px 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ---------- 分区 ---------- */
+
+.ed-body {
+  display: grid;
+  grid-template-columns: 164px minmax(0, 1fr);
+  align-items: start;
+  gap: 32px;
+}
+
+.ed-nav {
+  position: sticky;
+  top: calc(var(--topbar-h) + 16px);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ed-nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 0;
+  border-left: 2px solid transparent;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: none;
+  color: var(--ink-soft);
+  font-size: 14px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ed-nav-item:hover:not(:disabled) {
+  background: var(--paper-2);
+  color: var(--ink);
+}
+
+.ed-nav-item[aria-current='true'] {
+  border-left-color: var(--ink);
+  background: var(--paper-2);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.ed-nav-item:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ed-badge {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.ed-badge.is-error {
+  background: var(--seal);
+  color: var(--seal-ink);
+}
+
+.ed-badge.is-warning {
+  background: var(--gold);
+  color: #1d2330;
+}
+
+.ed-main {
+  min-width: 0;
+}
+
+.ed-section-title {
+  margin: 0 0 14px;
+  font-family: var(--font-story);
+  font-size: 22px;
+}
+
+.ed-subhead {
+  margin: 22px 0 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-soft);
+  font-size: 15px;
+}
+
+/* ---------- 表单 ---------- */
+
+.ed-main .ed-field {
+  margin-bottom: 14px;
+}
+
+.ed-field > legend {
+  margin-bottom: 6px;
+}
+
+.ed-main textarea {
+  /* 跟着内容变高（浏览器支持的话），最矮是 rows 行 */
+  min-height: calc(var(--rows, 2) * 1.6em + 18px);
+  max-height: 24em;
+  field-sizing: content;
+}
+
+.ed-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+  gap: 0 16px;
+}
+
+.ed-grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ed-grid-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 1000px) {
+  .ed-grid-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.ed-grid-start {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.ed-grid-key {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.ed-key input {
+  font-family: var(--font-code);
+  font-size: 14px;
+  /* 和旁边的输入框一样高 */
+  line-height: 1.77;
+}
+
+.ed-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ed-inline select {
+  width: auto;
+  min-width: 4.5em;
+}
+
+.ed-main .ed-check {
+  margin-bottom: 14px;
+}
+
+/* 一串文字、出口：每行一个输入框，右边是上移、下移、删除 */
+.ed-string,
+.ed-exit {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.ed-string > input,
+.ed-string > textarea {
+  flex: 1;
+  min-width: 0;
+}
+
+.ed-exit {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.ed-exit > select {
+  flex: 1 1 12em;
+  width: auto;
+  min-width: 0;
+}
+
+.ed-minutes {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.ed-minutes input {
+  width: 6em;
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.ed-tools {
+  display: inline-flex;
+  flex: none;
+  gap: 2px;
+}
+
+.ed-tool {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ed-string .ed-tools,
+.ed-exit .ed-tools {
+  margin-top: 4px;
+}
+
+.ed-tool:hover:not(:disabled) {
+  border-color: var(--rule);
+  background: var(--paper-2);
+  color: var(--ink);
+}
+
+.ed-tool-delete:hover:not(:disabled) {
+  color: var(--seal);
+}
+
+.ed-tool:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.ed-add {
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+/* 列表里的一项（一个身份、一个地点……） */
+.ed-items {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ed-item {
+  padding: 10px 16px 2px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--field) 70%, var(--paper));
+  scroll-margin-top: calc(var(--topbar-h) + 16px);
+}
+
+.ed-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 -4px 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--rule);
+}
+
+.ed-item-title {
+  min-width: 0;
+  font-family: var(--font-story);
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+
+.ed-add-item {
+  align-self: flex-start;
+}
+
+.ed-bad {
+  margin: 0 0 12px;
+}
+
+/* 点了检查出的问题：那一块闪一下 */
+.ed-flash {
+  animation: ed-flash 1.6s ease-out;
+}
+
+@keyframes ed-flash {
+  0%,
+  30% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 55%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 3px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ed-flash {
+    animation: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 55%, transparent);
+  }
+}
+
+/* 属性：七项（或者五项）排一行，放不下就折行；合计不对的标红 */
+.ed-attrs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  gap: 8px;
+}
+
+.ed-attr {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.ed-attr select {
+  min-height: 36px;
+  padding: 4px 8px;
+}
+
+.ed-sum {
+  margin-left: 10px;
+  color: var(--jade);
+  font-size: 13px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.ed-sum.is-off {
+  color: var(--seal);
+  font-weight: 600;
+}
+
+.ed-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ed-main .ed-points .ed-check {
+  margin-bottom: 0;
+  padding: 3px 0;
+}
+
+.ed-points .ed-check.is-missing span {
+  color: var(--seal);
+}
+
+/* 真相的要点：有几条线索指向它（少于两条标出来） */
+.ed-count {
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  color: var(--jade);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.ed-count.is-low {
+  color: var(--gold-deep);
+  font-weight: 600;
+}
+
+/* JSON：整份原文，等宽字，自己滚动 */
+.ed-json .form-error {
+  margin-bottom: 8px;
+}
+
+.ed-main .ed-json-text {
+  height: min(72vh, 900px);
+  max-height: none;
+  field-sizing: fixed;
+  font-family: var(--font-code);
+  font-size: 13px;
+  line-height: 1.5;
+  /* 剧本里多是很长的一段段文字：折行，不用左右滑 */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  overflow-y: auto;
+  tab-size: 2;
+}
+
+/* ---------- 窄屏 ---------- */
+
+@media (max-width: 760px) {
+  /* 分区挪到顶上，排成一排，左右滑；往下翻时贴在顶栏下面 */
+  .ed-body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .ed-nav {
+    top: var(--topbar-h);
+    z-index: 5;
+    flex-direction: row;
+    gap: 0;
+    margin: 0 -24px;
+    padding: 0 24px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper);
+  }
+
+  .ed-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ed-nav-item {
+    flex: none;
+    padding: 10px 10px 8px;
+    border-left: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+  }
+
+  .ed-nav-item[aria-current='true'] {
+    border-bottom-color: var(--ink);
+    background: none;
+  }
+
+  .ed-summary {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .ed-nav {
+    margin: 0 -16px;
+    padding: 0 16px;
+  }
+
+  .ed-title {
+    font-size: 24px;
+  }
+
+  .ed-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ed-grid-3,
+  .ed-grid-4,
+  .ed-grid-start {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ed-grid-start > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  .ed-grid-key {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .ed-item {
+    padding: 8px 12px 2px;
+  }
+
+  .ed-actions .btn {
+    padding: 7px 12px;
+  }
+}
+
+/* 5E 模组（V0.9.0）：怪物用自己写的数据块时的说明；宝藏里的一件物品（物品标识、数量、去掉） */
+.ed-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.ed-treasure-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5.5rem auto;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.ed-treasure-item input {
+  width: 100%;
+  min-width: 0;
+}

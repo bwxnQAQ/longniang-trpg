@@ -1,0 +1,226 @@
+/* ---------- 网站向导 ---------- */
+
+.site-footer-guide {
+  color: var(--jade);
+  font-weight: 600;
+}
+
+.guide-panel {
+  position: fixed;
+  right: 16px;
+  bottom: calc(var(--footer-h) + 12px);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  width: min(380px, calc(100vw - 32px));
+  height: min(560px, calc(100vh - var(--topbar-h) - var(--footer-h) - 40px));
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  background: var(--paper);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.18);
+}
+
+.guide-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px 8px 14px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.guide-head h2 {
+  flex: 1;
+  margin: 0;
+  font-family: var(--font-story);
+  font-size: 18px;
+}
+
+.guide-messages {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 12px;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.guide-msg {
+  max-width: 88%;
+  padding: 8px 11px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-line;
+}
+
+.guide-msg-user {
+  align-self: flex-end;
+  background: color-mix(in srgb, var(--focus) 14%, var(--field));
+}
+
+.guide-msg-assistant {
+  align-self: flex-start;
+  border: 1px solid var(--rule);
+  background: var(--field);
+}
+
+.guide-msg-thinking {
+  color: var(--muted);
+}
+
+.guide-off,
+.guide-error {
+  margin: 0;
+  padding: 0 12px 6px;
+  font-size: 13px;
+}
+
+.guide-form {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  padding: 10px 12px;
+  border-top: 1px solid var(--rule);
+}
+
+.guide-form textarea {
+  flex: 1;
+  min-width: 0;
+  resize: none;
+}
+
+@media (max-width: 560px) {
+  .guide-panel {
+    right: 8px;
+    left: 8px;
+    width: auto;
+  }
+}
+
+/* ---------- 管理：AI 审核、公告模板、活动 ---------- */
+
+.ai-review {
+  --verdict: var(--rule-strong);
+  margin: 10px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--rule);
+  border-left: 4px solid var(--verdict);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--paper);
+  font-size: 14px;
+}
+
+.ai-review.verdict-approve,
+.ai-review.verdict-no_violation {
+  --verdict: var(--jade);
+}
+
+.ai-review.verdict-reject,
+.ai-review.verdict-violation {
+  --verdict: var(--seal);
+}
+
+.ai-review.verdict-unsure {
+  --verdict: var(--gold);
+}
+
+.ai-review-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+
+.ai-review-label {
+  font-weight: 600;
+}
+
+.ai-review-verdict {
+  color: var(--verdict);
+  font-weight: 700;
+}
+
+.ai-review-model {
+  font-size: 12px;
+}
+
+.ai-review-head .linklike {
+  margin-left: auto;
+  font-size: 13px;
+}
+
+.ai-review-summary {
+  margin: 6px 0;
+}
+
+.ai-review-facts {
+  margin-top: 6px;
+}
+
+.announce-templates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.announce-grant {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--gold-deep);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--gold) 8%, var(--field));
+}
+
+.inline-inputs {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.inline-inputs input,
+.field .inline-inputs input {
+  flex: none;
+  width: 8em;
+}
+
+.inline-inputs > span {
+  white-space: nowrap;
+}
+
+.event-form {
+  max-width: 40em;
+  margin-bottom: 18px;
+}
+
+.event-templates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.event-times {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.event-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 0;
+  padding: 8px 0;
+  border: 0;
+}
+
+.event-choices legend {
+  margin-bottom: 4px;
+  color: var(--ink-soft);
+  font-size: 14px;
+}

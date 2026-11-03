@@ -1,0 +1,177 @@
+/* ======================================================================
+   V0.6.0
+   ====================================================================== */
+
+/* ---------- 宠物的头像和装扮 ---------- */
+
+.pet-figure {
+  position: relative;
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+}
+
+.pet-figure img,
+.pet-figure-seal {
+  border: 3px double var(--ink);
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.pet-figure-seal {
+  display: grid;
+  place-items: center;
+  background: var(--seal);
+  color: var(--seal-ink);
+  font-family: var(--font-story);
+}
+
+.pet-figure-large img,
+.pet-figure-large .pet-figure-seal {
+  width: 168px;
+  height: 168px;
+  font-size: 72px;
+}
+
+.pet-figure-medium img,
+.pet-figure-medium .pet-figure-seal {
+  width: 96px;
+  height: 96px;
+  font-size: 42px;
+}
+
+.pet-figure-small img,
+.pet-figure-small .pet-figure-seal {
+  width: 40px;
+  height: 40px;
+  border-width: 2px;
+  font-size: 18px;
+}
+
+/* 装扮画在比头像大一圈的格子里，帽子、灯笼能探出去 */
+.pet-figure-outfit {
+  position: absolute;
+  inset: -12% -12% -14%;
+  width: 124%;
+  height: 126%;
+  pointer-events: none;
+}
+
+.pet-away {
+  margin: 8px 0 0;
+  color: var(--jade);
+  font-weight: 600;
+}
+
+/* ---------- 骰子皮肤、刚掷出来的骰子 ---------- */
+
+.dice.is-rolling .die {
+  animation: die-shake 120ms linear infinite;
+}
+
+@keyframes die-shake {
+  0% {
+    transform: rotate(-12deg) translateY(-1px);
+  }
+  50% {
+    transform: rotate(10deg) translateY(1px);
+  }
+  100% {
+    transform: rotate(-12deg) translateY(-1px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dice.is-rolling .die {
+    animation: none;
+  }
+}
+
+.skin-jade .die rect {
+  fill: #cfe5d8;
+  stroke: #2d7563;
+}
+
+.skin-jade .die circle {
+  fill: #1f5546;
+}
+
+.skin-bone .die rect {
+  fill: #efe6cf;
+  stroke: #7d6a43;
+}
+
+.skin-bone .die circle {
+  fill: #4a3b22;
+}
+
+.skin-ink .die rect {
+  fill: #1d2330;
+  stroke: #1d2330;
+}
+
+.skin-ink .die circle {
+  fill: #f2f3ef;
+}
+
+.skin-gold .die rect {
+  fill: #e6c372;
+  stroke: #8f6418;
+}
+
+.skin-gold .die circle {
+  fill: #5c3f0b;
+}
+
+.skin-pumpkin .die rect {
+  fill: #e98a2c;
+  stroke: #7a3f0c;
+}
+
+.skin-pumpkin .die circle {
+  fill: #2a1708;
+}
+
+.skin-red .die rect {
+  fill: #b23a2e;
+  stroke: #6e1d15;
+}
+
+.skin-red .die circle {
+  fill: #f0c75e;
+}
+
+/* 两个 6、两个 1 的颜色在皮肤上也要认得出 */
+.dice[class*='skin-'] .die-6 circle {
+  fill: var(--gold);
+}
+
+.dice[class*='skin-'] .die-1 circle {
+  fill: #e2735f;
+}
+
+/* 宠物出手：第一次没成的那一行淡一点 */
+.roll-first {
+  opacity: 0.72;
+}
+
+.roll-first .roll-math {
+  text-decoration: line-through;
+  text-decoration-color: var(--muted);
+}
+
+.roll-pet {
+  color: var(--jade);
+  font-weight: 600;
+}
+
+/* 叙述旁边的「朗读」 */
+.entry-speak {
+  margin-left: 6px;
+  font-size: 12px;
+}
+
+.btn.is-on {
+  border-color: var(--jade);
+  color: var(--jade);
+}

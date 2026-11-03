@@ -1,0 +1,58 @@
+/*
+  网站的全部样式，按原来写的先后顺序拆成了 styles/ 下面这些文件。
+  后面的规则会盖过前面的，所以 @import 的顺序就是原来的顺序，不要调换；新加的样式接在最后面，或者放进对应的文件里。
+*/
+
+/* 第一版：变量、基础、顶栏和页面骨架、表单、我的对局、对局页面、规则页、窄屏、剧本工坊、主持工具和管理后台 */
+@import './styles/base.css'; /* 视觉方向、颜色和字体变量、基础、印章和状态戳 */
+@import './styles/layout.css'; /* 顶栏、页面骨架、页脚 */
+@import './styles/forms.css'; /* 按钮、表单、登录和注册 */
+@import './styles/my-rooms.css'; /* 我的对局、剧本分区的小印章 */
+@import './styles/room.css'; /* 对局页面、页头的剧本名和游戏时钟、对局记录里的各种卡片、输入框 */
+@import './styles/room-setup.css'; /* 开团准备、角色卡和线索、你不在的时候 */
+@import './styles/rules.css'; /* 管理和账号页的通用区块、规则页 */
+@import './styles/narrow.css'; /* 窄屏（手机）上的调整、我的对局的待办 */
+@import './styles/studio.css'; /* 剧本工坊：AI 生成、导入文本剧本 */
+@import './styles/host-admin.css'; /* 额度、使用规则、主持工具、管理后台、管理页的剧本 */
+@import './styles/hall-rooms.css'; /* 大厅里公开的对局 */
+
+/* V0.2.0～V0.5.0：大厅三栏、头像、好友和私聊、通知、公告、大厅聊天、个人主页、反馈、对局页面的聊天和设置、观看、选身份、管理后台、剧本大厅、宠物 */
+@import './styles/topbar-badges.css'; /* 这一版加的颜色、页面宽度、未读数和顶栏 */
+@import './styles/avatars.css'; /* 头像和人 */
+@import './styles/hall.css'; /* 游戏大厅三栏、公告、大厅聊天，我的对局（单独一页） */
+@import './styles/dialogs.css'; /* 对话框、反馈、登录页的游客入口 */
+@import './styles/social.css'; /* 通知、好友和私聊 */
+@import './styles/profile-account.css'; /* 个人主页、账号设置、规则页的目录 */
+@import './styles/room-chat.css'; /* 对局页面：观看、中途加入、在场的人、对白，右边的聊天和设置，开局对话框，选身份 */
+@import './styles/admin.css'; /* 管理后台：分级、账号批量处理、举报和反馈、公告、模型、操作记录，人民币和美元切换 */
+@import './styles/topbar-menu.css'; /* 窄屏的顶栏、主菜单在左上角 */
+@import './styles/admin-extras.css'; /* 管理页的零碎（游客分组、排序、新建账号、兑换码、封多久、注册设置……），私密的系统消息、兑换额度、观看时申请加入 */
+@import './styles/scenario-hall.css'; /* 剧本大厅、投稿和审核，个人主页的关注和作品 */
+@import './styles/pets.css'; /* 宠物、龙晶，社交页的关注列表 */
+
+/* V0.6.0：宠物的装扮、骰子皮肤、宠物页、称号和成就、评分、作品、主持风格、限时活动、图鉴、网站向导 */
+@import './styles/pet-figure-dice.css'; /* 宠物的头像和装扮、骰子皮肤、宠物出手、朗读 */
+@import './styles/pet-pages.css'; /* 宠物页：远行、背包、商店、日记、排行 */
+@import './styles/titles-visits.css'; /* 称号、成就，个人主页的串门和留言 */
+@import './styles/ratings-works.css'; /* 评分、短评，作品：排行、我的作品、给作者的反馈 */
+@import './styles/events-collection.css'; /* 主持风格、限时活动、图鉴 */
+@import './styles/guide-admin-review.css'; /* 网站向导，管理：AI 审核、公告模板、活动 */
+
+/* V0.7.0：商城、背包、装扮、排行，角色卡、地下城、战斗 */
+@import './styles/topbar-frames.css'; /* 这一版加的颜色、顶栏的龙晶、头像框 */
+@import './styles/shop-bag.css'; /* 商城、我的背包、装扮 */
+@import './styles/rankings.css'; /* 排行、管理页的商城改价 */
+@import './styles/cards-dungeon.css'; /* 角色卡、地下城、战斗（规则第二版），大厅里筛选公开的对局 */
+@import './styles/group-chat.css'; /* 群聊（社交页）、管理页的聊天记录 */
+
+/* V0.7.1 */
+@import './styles/dungeon-hall-guest.css'; /* 地下城页、游客看到的「注册以后才能……」 */
+@import './styles/ai-seats.css'; /* V0.8.0 AI 补位：交给 AI 演的身份、成员列表里的 AI 队友 */
+@import './styles/schedule.css'; /* V0.8.0 约团：对局页页头的下次时间、约团对话框、我的对局里的下次时间 */
+@import './styles/push.css'; /* V0.8.0 浏览器通知：账号设置里的「浏览器通知」 */
+@import './styles/system-health.css'; /* V0.8.0 稳定性：管理页「版本和数据」里最近的错误 */
+@import './styles/highlights.css'; /* V0.8.0 名场面和战报：记录里的星标、右边的名场面、战报对话框 */
+@import './styles/editor.css'; /* V0.8.0 网页剧本编辑器：草稿列表、分区、表单、检查结果、JSON */
+
+/* V0.9.0 */
+@import './styles/five.css'; /* 5E 规则：5E 角色卡、做卡和升级、对局里的 5E 角色和战斗 */

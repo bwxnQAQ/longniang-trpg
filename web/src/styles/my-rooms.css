@@ -1,0 +1,131 @@
+/* ---------- 我的对局 ---------- */
+
+.room-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--rule);
+}
+
+.room-list li {
+  border-bottom: 1px solid var(--rule);
+}
+
+.room-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 10px;
+  text-decoration: none;
+}
+
+.room-row:hover {
+  background: var(--paper-2);
+}
+
+.room-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.room-row-name {
+  font-family: var(--font-story);
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.room-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.tag {
+  display: inline-block;
+  padding: 0 6px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 3px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.tag-warn {
+  margin-left: 6px;
+  border-color: currentColor;
+  color: var(--seal);
+}
+
+/* 剧本分区：像一枚小印章 */
+.category-tag {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 0 6px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  background: color-mix(in srgb, currentColor 9%, transparent);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.6;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+
+.category-puzzle {
+  color: var(--cat-puzzle);
+}
+
+.category-horror {
+  color: var(--cat-horror);
+}
+
+.category-combat {
+  color: var(--cat-combat);
+}
+
+.category-adventure {
+  color: var(--cat-adventure);
+}
+
+.category-social {
+  color: var(--cat-social);
+}
+
+.presence {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.presence.is-on {
+  color: var(--jade);
+}
+
+.dot {
+  flex: none;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid var(--muted);
+  border-radius: 50%;
+}
+
+.presence.is-on .dot,
+.member.is-online .dot {
+  background: var(--jade);
+  border-color: var(--jade);
+}
+
+.empty {
+  padding: 32px 0;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-soft);
+}

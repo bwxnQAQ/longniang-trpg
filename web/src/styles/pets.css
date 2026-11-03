@@ -1,0 +1,493 @@
+/* ---------- 宠物（V0.5.0） ---------- */
+
+.pet-crystals {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-family: var(--font-story);
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pet-crystals .muted {
+  font-family: var(--font-ui);
+  font-size: 13px;
+}
+
+/* 一块龙晶：六棱的晶体，左右两个面一亮一暗 */
+.crystal-mark {
+  display: inline-block;
+  width: 12px;
+  height: 18px;
+  clip-path: polygon(50% 0, 100% 22%, 100% 78%, 50% 100%, 0 78%, 0 22%);
+  background: linear-gradient(90deg, var(--gold) 0 50%, var(--gold-deep) 50% 100%);
+}
+
+.pet-adopt {
+  max-width: 34em;
+}
+
+.pet-card {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 20px 32px;
+  align-items: start;
+  padding: 24px 0 28px;
+  border-top: 2px solid var(--ink);
+}
+
+.pet-portrait {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.pet-portrait img,
+.pet-portrait-seal {
+  width: 168px;
+  height: 168px;
+  border: 3px double var(--ink);
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.pet-portrait-seal {
+  display: grid;
+  place-items: center;
+  background: var(--seal);
+  color: var(--seal-ink);
+  font-family: var(--font-story);
+  font-size: 72px;
+}
+
+.pet-portrait-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+}
+
+.pet-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin: 0;
+  font-family: var(--font-story);
+  font-size: 30px;
+  letter-spacing: 0.04em;
+}
+
+.pet-title {
+  padding: 0 8px;
+  border: 1px solid var(--gold-deep);
+  border-radius: 3px;
+  color: var(--gold-deep);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+
+.pet-desc {
+  max-width: 38em;
+  margin: 6px 0 0;
+  font-family: var(--font-story);
+  line-height: 1.85;
+}
+
+.pet-edit {
+  margin-top: 4px;
+}
+
+.pet-attrs {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  max-width: 34em;
+  margin: 16px 0 0;
+  border: 1px solid var(--rule);
+}
+
+.pet-attrs div {
+  padding: 8px 4px;
+  text-align: center;
+}
+
+.pet-attrs div + div {
+  border-left: 1px solid var(--rule);
+}
+
+.pet-attrs dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.pet-attrs dd {
+  margin: 0;
+  font-family: var(--font-story);
+  font-size: 24px;
+}
+
+.pet-meters {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 34em;
+  margin-top: 16px;
+}
+
+.pet-meter {
+  display: grid;
+  grid-template-columns: 4em minmax(0, 1fr) 3em;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.pet-meter-label {
+  color: var(--ink-soft);
+}
+
+.pet-meter-bar {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--paper-2);
+}
+
+.pet-meter-fill {
+  display: block;
+  height: 100%;
+  background: var(--jade);
+}
+
+.pet-meter-fill.is-low {
+  background: var(--seal);
+}
+
+.pet-meter-value {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.pet-tabs {
+  margin-top: 8px;
+}
+
+/* 手机上宠物、图鉴的标签排成一行，左右滑（和剧本大厅的分区一样） */
+@media (max-width: 640px) {
+  .pet-tabs,
+  .collection-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .pet-tabs::-webkit-scrollbar,
+  .collection-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .pet-tabs .picker-tab,
+  .collection-tabs .picker-tab {
+    flex: none;
+    margin-bottom: 0;
+  }
+}
+
+.pet-section {
+  padding: 16px 0;
+}
+
+.pet-subhead {
+  margin: 16px 0 8px;
+  font-size: 15px;
+}
+
+.pet-working {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.pet-working p {
+  margin: 0;
+}
+
+.job-board {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.job-column h3 {
+  margin: 0 0 8px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--ink);
+  font-size: 15px;
+}
+
+.job-column ul {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.job {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--field);
+}
+
+.job.is-locked {
+  opacity: 0.6;
+}
+
+.job-name {
+  font-family: var(--font-story);
+  font-size: 16px;
+}
+
+.job-meta {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.job-pay {
+  color: var(--gold-deep);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.job-why {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.job .btn {
+  margin-top: 4px;
+}
+
+.bag-list,
+.shop-list {
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--rule);
+  list-style: none;
+}
+
+.bag-list li,
+.shop-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.bag-name,
+.shop-name {
+  min-width: 7em;
+  font-family: var(--font-story);
+  font-size: 16px;
+}
+
+.bag-effect,
+.shop-effect {
+  flex: 1;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.shop-price {
+  color: var(--gold-deep);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.shop-buy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pet-exchange p {
+  margin: 0 0 12px;
+}
+
+.pet-exchange .inline-form .field {
+  flex: 0 1 260px;
+}
+
+.inline-form.exchange-form .field {
+  flex: 0 1 170px;
+}
+
+.lobby-slow .inline-form .field {
+  flex: 0 1 320px;
+}
+
+.exchange-form .choice {
+  align-self: center;
+}
+
+@media (max-width: 560px) {
+  /* 商店：名字、价钱一行，效果、买一行（效果不再被挤成一个字一行） */
+  .shop-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'name price'
+      'effect buy';
+    gap: 4px 12px;
+  }
+
+  .shop-name {
+    grid-area: name;
+    min-width: 0;
+  }
+
+  .shop-effect {
+    grid-area: effect;
+  }
+
+  .shop-price {
+    grid-area: price;
+    justify-self: end;
+  }
+
+  .shop-buy,
+  .shop-owned {
+    grid-area: buy;
+    justify-self: end;
+  }
+}
+
+.pet-records {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.ledger-in {
+  color: var(--jade);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.ledger-out {
+  color: var(--seal);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 900px) {
+  .job-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .pet-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pet-portrait img,
+  .pet-portrait-seal {
+    width: 132px;
+    height: 132px;
+  }
+
+  .pet-portrait-seal {
+    font-size: 56px;
+  }
+
+  .job-board,
+  .pet-records {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pet-attrs dd {
+    font-size: 20px;
+  }
+}
+
+.my-pet {
+  margin: 0;
+  color: var(--gold-deep);
+  font-size: 14px;
+}
+
+.my-character-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* 个人主页上的宠物 */
+.profile-pet {
+  margin: 28px 0;
+}
+
+.profile-pet-card {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.profile-pet-image {
+  width: 104px;
+  height: 104px;
+  border: 3px double var(--ink);
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.pet-portrait-seal.profile-pet-image {
+  font-size: 44px;
+}
+
+.profile-pet-name {
+  font-size: 22px;
+}
+
+.profile-pet-info .pet-attrs {
+  margin-top: 10px;
+}
+
+@media (max-width: 560px) {
+  .profile-pet-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* 社交页「关注」列表：和好友列表一样的行，右边多一个取消关注 */
+.friend-item {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--rule);
+}
+
+.friend-item .friend-row {
+  flex: 1;
+  min-width: 0;
+  border-bottom: 0;
+}
+
+.friend-row-action {
+  flex: none;
+  margin-right: 4px;
+}

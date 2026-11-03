@@ -1,0 +1,14 @@
+{
+  "name": "龙娘跑团",
+  "short_name": "龙娘跑团",
+  "lang": "zh-CN",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f2f3ef",
+  "theme_color": "#f2f3ef",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

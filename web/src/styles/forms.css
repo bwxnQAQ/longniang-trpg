@@ -1,0 +1,235 @@
+/* ---------- 按钮 ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 7px 16px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: var(--paper-2);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+.btn-primary:hover {
+  background: color-mix(in srgb, var(--ink) 86%, var(--paper));
+}
+
+.btn-quiet {
+  border-color: transparent;
+  color: var(--ink-soft);
+}
+
+.btn-danger {
+  border-color: color-mix(in srgb, var(--seal) 55%, transparent);
+  color: var(--seal);
+}
+
+.btn-danger:hover {
+  background: color-mix(in srgb, var(--seal) 8%, transparent);
+}
+
+.btn-danger-text {
+  color: var(--seal);
+}
+
+.btn-danger-solid {
+  background: var(--seal);
+  border-color: var(--seal);
+  color: var(--seal-ink);
+}
+
+.btn-danger-solid:hover {
+  background: color-mix(in srgb, var(--seal) 88%, var(--ink));
+}
+
+.btn-small {
+  min-height: 30px;
+  padding: 3px 10px;
+  font-size: 13px;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+/* ---------- 表单 ---------- */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.field > label:not(.choice),
+.field > legend {
+  padding: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+input:not([type='radio']):not([type='checkbox']),
+select,
+textarea {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  background: var(--field);
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+  border-color: var(--focus);
+}
+
+textarea {
+  resize: vertical;
+  line-height: 1.6;
+}
+
+input:disabled,
+textarea:disabled {
+  opacity: 0.6;
+}
+
+.code-input {
+  max-width: 220px;
+  font-family: var(--font-code);
+  letter-spacing: 0.25em;
+}
+
+.choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 6px 0;
+  cursor: pointer;
+}
+
+.choice input {
+  width: 16px;
+  height: 16px;
+  margin: 5px 0 0;
+  accent-color: var(--ink);
+}
+
+.choice span {
+  display: flex;
+  flex-direction: column;
+}
+
+.choice small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.form-error {
+  color: var(--seal);
+  font-size: 14px;
+}
+
+.form-ok {
+  color: var(--jade);
+  font-size: 14px;
+}
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 展开的表单像一张单子：上面一道粗线，不用卡片阴影 */
+.panel {
+  max-width: 520px;
+  margin-bottom: 28px;
+  padding: 20px 0 24px;
+  border-top: 2px solid var(--ink);
+  border-bottom: 1px solid var(--rule);
+}
+
+.panel h2 {
+  font-family: var(--font-story);
+  font-size: 20px;
+}
+
+.narrow {
+  max-width: 420px;
+}
+
+/* ---------- 登录和注册 ---------- */
+
+.auth-page {
+  min-height: calc(100dvh - var(--footer-h));
+  display: grid;
+  place-items: start center;
+  padding: 12vh 24px 48px;
+}
+
+.auth-panel {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.auth-panel h1 {
+  font-family: var(--font-story);
+  font-size: 30px;
+}
+
+.auth-brand {
+  display: flex;
+  justify-content: center;
+  margin: -24px 0 0;
+}
+
+/* 整张标志放大显示；图里已经写着站名 */
+.auth-logo {
+  display: block;
+  width: min(280px, 72vw);
+  height: auto;
+}
+
+.auth-foot {
+  color: var(--ink-soft);
+  font-size: 14px;
+}

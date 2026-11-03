@@ -1,0 +1,953 @@
+/* V0.9.0 5E 规则：5E 角色卡（列表、整张卡）、做卡和升级（步骤、选项、预览）、对局里的 5E 角色和战斗 */
+
+:root {
+  /* 5E 的颜色：靛青，和地下城、剧本分区的颜色分开 */
+  --five: #3d4f8f;
+  --five-soft: color-mix(in srgb, var(--five) 10%, transparent);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --five: #9aa8e8;
+  }
+}
+
+/* ---------- 角色卡列表 ---------- */
+
+.five-cards {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.five-cards > .five-card,
+.five-cards > .five-editor {
+  align-self: stretch;
+}
+
+.five-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 18px;
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--five);
+  border-radius: 0 0 var(--radius) var(--radius);
+  background: var(--field);
+}
+
+.five-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+.five-card-head h2 {
+  margin: 0;
+  font-family: var(--font-story);
+  font-size: 22px;
+}
+
+.five-card-class {
+  color: var(--five);
+  font-weight: 700;
+}
+
+/* ---------- 整张卡 ---------- */
+
+.five-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.five-sheet-who {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.five-vitals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  margin: 0;
+}
+
+.five-vitals div {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.five-vitals dt {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.five-vitals dd {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.five-abilities {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+  margin: 4px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.five-ability {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 2px 4px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  background: var(--paper);
+}
+
+/* 豁免熟练的那几项：上面一道靛青 */
+.five-ability.is-save {
+  border-top: 3px solid var(--five);
+}
+
+.five-ability-name {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.five-ability-mod {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.five-ability-score {
+  min-width: 2.2em;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-soft);
+  font-size: 12px;
+  text-align: center;
+}
+
+.five-line {
+  margin: 0;
+}
+
+.five-label {
+  margin-right: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.five-sub {
+  margin: 10px 0 2px;
+  font-size: 14px;
+}
+
+.five-attacks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.five-attacks li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  padding: 3px 0;
+  border-bottom: 1px dashed var(--rule);
+}
+
+.five-attack-name {
+  min-width: 6em;
+  font-weight: 600;
+}
+
+.five-spells ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 14px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.five-spells details[open] {
+  flex-basis: 100%;
+}
+
+.five-spells summary,
+.five-rule summary {
+  cursor: pointer;
+}
+
+.five-spell-meta {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.five-text {
+  margin: 4px 0 6px;
+  font-size: 14px;
+  white-space: pre-line;
+}
+
+.five-skill-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0 16px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.five-skill-grid li {
+  display: grid;
+  grid-template-columns: 1fr 1.6em 2.4em;
+  color: var(--muted);
+}
+
+.five-skill-grid li.is-prof {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.five-prof {
+  color: var(--five);
+  font-size: 12px;
+}
+
+.five-more summary {
+  color: var(--ink-soft);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.five-sheet.is-compact {
+  font-size: 13px;
+}
+
+.five-sheet.is-compact .five-abilities {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.five-sheet.is-compact .five-vitals dd {
+  font-size: 15px;
+}
+
+/* ---------- 做卡、升级 ---------- */
+
+.five-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.five-editor-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.five-editor-head h2 {
+  margin: 0;
+  font-family: var(--font-story);
+  font-size: 22px;
+}
+
+.five-steps {
+  display: flex;
+  gap: 4px 18px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--rule);
+  scrollbar-width: thin;
+}
+
+.five-step-tab {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: -1px;
+  padding: 8px 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--muted);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.five-step-tab[aria-current='step'] {
+  border-bottom-color: var(--ink);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* 步骤的号码：做完了是青绿，还有没选的是金色，选错了是朱红 */
+.five-step-no {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--paper-2);
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.five-step-tab.is-done .five-step-no {
+  background: var(--jade);
+  color: var(--paper);
+}
+
+.five-step-tab.is-todo .five-step-no {
+  background: var(--gold);
+  color: var(--paper);
+}
+
+.five-step-tab.is-bad .five-step-no {
+  background: var(--seal);
+  color: var(--seal-ink);
+}
+
+.five-editor-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  align-items: start;
+  gap: 24px;
+}
+
+.five-editor-main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.five-editor-preview {
+  position: sticky;
+  top: calc(var(--topbar-h) + 12px);
+  max-height: calc(100dvh - var(--topbar-h) - 24px);
+  overflow-y: auto;
+  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--five);
+  background: var(--field);
+}
+
+.five-editor-preview h3 {
+  margin: 0 0 4px;
+  font-family: var(--font-story);
+  font-size: 18px;
+}
+
+.five-editor-actions {
+  flex-wrap: wrap;
+  padding-top: 8px;
+  border-top: 1px solid var(--rule);
+}
+
+.five-issues {
+  margin: 0;
+  padding: 8px 12px 8px 28px;
+  border-left: 3px solid var(--gold);
+  background: color-mix(in srgb, var(--gold) 8%, transparent);
+  font-size: 14px;
+}
+
+.five-issues li.is-bad {
+  color: var(--seal);
+}
+
+.five-step {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.five-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.five-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  background: var(--field);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.five-tile:hover:not(:disabled) {
+  border-color: var(--five);
+}
+
+.five-tile[aria-checked='true'] {
+  border-color: var(--five);
+  box-shadow: inset 0 0 0 1px var(--five);
+  background: var(--five-soft);
+}
+
+.five-tile:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.five-tile-title {
+  font-family: var(--font-story);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.five-tile-line {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.five-detail h3 {
+  margin: 4px 0;
+  font-family: var(--font-story);
+  font-size: 20px;
+}
+
+.five-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 2px 14px;
+  margin: 6px 0;
+  font-size: 14px;
+}
+
+.five-facts div {
+  display: contents;
+}
+
+.five-facts dt {
+  color: var(--muted);
+}
+
+.five-facts dd {
+  margin: 0;
+}
+
+.five-rule {
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--rule);
+  font-size: 14px;
+}
+
+.five-rule.is-inline {
+  padding: 0;
+  border: 0;
+  font-size: 13px;
+}
+
+.five-pick {
+  min-width: 0;
+  margin: 0;
+  padding: 10px 0 0;
+  border: 0;
+  border-top: 1px solid var(--rule);
+}
+
+.five-pick legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.five-pick ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 0 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* 点开了说明的那一项、说明写在后面的单选：占满一行 */
+.five-pick li.is-open {
+  grid-column: 1 / -1;
+}
+
+.five-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.five-info {
+  flex: none;
+  margin-top: 3px;
+  padding: 0 6px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: none;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+  cursor: pointer;
+}
+
+.five-info:hover,
+.five-info[aria-expanded='true'] {
+  border-color: var(--five);
+  color: var(--five);
+}
+
+.five-info-box {
+  margin: 2px 0 8px 23px;
+  padding: 6px 10px;
+  border-left: 2px solid var(--five);
+  background: var(--five-soft);
+}
+
+.five-info-box .five-text {
+  margin: 2px 0;
+}
+
+.five-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 3px 0;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.five-check input {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  margin: 4px 0 0;
+  accent-color: var(--five);
+}
+
+.five-check small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.five-option-text {
+  display: block;
+  white-space: pre-line;
+}
+
+.five-check.is-off {
+  color: var(--muted);
+}
+
+.five-count {
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--paper-2);
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.five-count.is-done {
+  background: color-mix(in srgb, var(--jade) 18%, transparent);
+  color: var(--jade);
+}
+
+.five-count.is-over {
+  background: color-mix(in srgb, var(--seal) 15%, transparent);
+  color: var(--seal);
+}
+
+.five-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 18px;
+}
+
+.five-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+
+.field-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.field-inline select {
+  width: auto;
+  min-width: 8em;
+}
+
+.five-filter .chip {
+  cursor: pointer;
+}
+
+.five-filter .chip[aria-pressed='true'] {
+  border-color: var(--five);
+  color: var(--five);
+}
+
+.five-ability-table {
+  width: 100%;
+  max-width: 560px;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.five-ability-table th,
+.five-ability-table td {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--rule);
+  text-align: center;
+}
+
+.five-ability-table th[scope='row'] {
+  text-align: left;
+}
+
+.five-ability-table thead th {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.five-ability-table select {
+  width: auto;
+  min-height: 32px;
+  padding: 2px 8px;
+}
+
+.five-final {
+  font-weight: 700;
+}
+
+.five-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.five-stepper span {
+  min-width: 1.6em;
+  font-weight: 600;
+}
+
+.five-slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px 16px;
+}
+
+.five-invocation {
+  grid-column: 1 / -1;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--rule);
+}
+
+.five-feat {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.five-rest,
+.five-text-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* SRD 5.2.1 的署名：页面最下面，小字 */
+.five-srd {
+  padding-top: 10px;
+  border-top: 1px solid var(--rule);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.five-srd p {
+  margin: 2px 0;
+}
+
+@media (max-width: 900px) {
+  .five-editor-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .five-editor-preview {
+    position: static;
+    max-height: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .five-abilities {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .five-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .five-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .five-facts dt {
+    margin-top: 4px;
+  }
+}
+
+/* ---------- 5E 的 d20、骰子卡片 ---------- */
+
+.d20 {
+  width: 26px;
+  height: 26px;
+}
+
+.d20-body {
+  fill: var(--field);
+  stroke: var(--ink);
+  stroke-width: 0.6;
+  stroke-linejoin: round;
+}
+
+.d20-facet {
+  fill: none;
+  stroke: var(--rule-strong);
+  stroke-width: 0.35;
+}
+
+.d20 text {
+  fill: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 3.4px;
+  font-weight: 700;
+}
+
+.d20.die-20 text {
+  fill: var(--gold-deep);
+}
+
+.d20.die-1 text {
+  fill: var(--seal);
+}
+
+/* 优势、劣势时没取的那颗 */
+.d20.is-dropped {
+  opacity: 0.38;
+}
+
+.dice.is-rolling .d20 {
+  animation: die-shake 120ms linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dice.is-rolling .d20 {
+    animation: none;
+  }
+}
+
+.skin-jade .d20-body {
+  fill: #cfe5d8;
+  stroke: #2d7563;
+}
+
+.skin-jade .d20 text {
+  fill: #1f5546;
+}
+
+.skin-bone .d20-body {
+  fill: #efe6cf;
+  stroke: #7d6a43;
+}
+
+.skin-bone .d20 text {
+  fill: #4a3b22;
+}
+
+.skin-ink .d20-body {
+  fill: #1d2330;
+  stroke: #1d2330;
+}
+
+.skin-ink .d20 text,
+.skin-ink .d20-facet {
+  fill: #f2f3ef;
+}
+
+.skin-gold .d20-body {
+  fill: #e6c372;
+  stroke: #8f6418;
+}
+
+.skin-gold .d20 text {
+  fill: #5c3f0b;
+}
+
+.skin-pumpkin .d20-body {
+  fill: #e98a2c;
+  stroke: #7a3f0c;
+}
+
+.skin-pumpkin .d20 text {
+  fill: #2a1708;
+}
+
+.skin-red .d20-body {
+  fill: #b23a2e;
+  stroke: #6e1d15;
+}
+
+.skin-red .d20 text {
+  fill: #f0c75e;
+}
+
+.dice[class*='skin-'] .d20.die-20 text {
+  fill: var(--gold);
+}
+
+.dice[class*='skin-'] .d20.die-1 text {
+  fill: #e2735f;
+}
+
+.roll-note {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.tag-five {
+  border-color: var(--five);
+  color: var(--five);
+}
+
+.chip-five {
+  border-color: var(--five);
+  color: var(--five);
+}
+
+/* ---------- 对局里的 5E 角色 ---------- */
+
+.five-room {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.five-room .five-abilities {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.five-pips {
+  margin-left: 4px;
+  color: var(--five);
+  letter-spacing: 1px;
+}
+
+.five-pips.is-good {
+  color: var(--jade);
+}
+
+.five-pips.is-bad {
+  color: var(--seal);
+}
+
+.five-death {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 6px;
+  margin: 0;
+}
+
+.five-slots-left {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 14px;
+}
+
+.five-resources {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.five-resources li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
+.combat-order .is-acted {
+  opacity: 0.6;
+}
+
+.combat-order .is-down {
+  text-decoration: line-through;
+}
+
+/* 个人主页上的 5E 角色 */
+.profile-card-5e {
+  border-top-color: var(--five);
+}
+
+/* ---------- 网站的电脑不在线（升级维护）时，开着的网页顶上的一行 ---------- */
+
+.site-down {
+  position: sticky;
+  top: var(--topbar-h);
+  z-index: 30;
+  padding: 8px 16px;
+  border-bottom: 1px solid color-mix(in srgb, var(--seal) 45%, transparent);
+  background: color-mix(in srgb, var(--seal) 10%, var(--paper));
+  color: var(--seal);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* 维护时顺带写上交流 QQ 群号（V1.0.1） */
+.site-down-qq {
+  display: inline-block;
+  margin-left: 12px;
+  color: var(--ink);
+  font-weight: 400;
+}
+
+.site-down-qq-number {
+  font-weight: 700;
+  -webkit-user-select: all;
+  user-select: all;
+}

@@ -1,0 +1,197 @@
+/* 只有你看得到的系统消息（主持人调整了你的角色、有人要协助你、行动取消了）：
+   和“线索告诉了别人”一样，左边一道金线，不用朱红（朱红留给状态戳和出错） */
+.entry-system.is-private {
+  padding: 6px 10px;
+  border-left: 2px solid var(--gold);
+  background: var(--paper-2);
+  color: var(--ink-soft);
+}
+
+/* 管理页「账号」：游客单独一组，默认折起来 */
+.admin-guests {
+  margin-top: 24px;
+}
+
+.admin-guests > summary {
+  width: fit-content;
+  color: var(--ink-soft);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-guests[open] > summary {
+  margin-bottom: 12px;
+}
+
+.admin-guests-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+/* 管理页「AI」：OpenRouter 的模型 */
+.openrouter-models {
+  max-width: 560px;
+  margin: 24px 0;
+}
+
+.openrouter-models textarea {
+  width: 100%;
+}
+
+/* 管理页「账号」：表头点了换排序（UID、创建时间） */
+.th-sort {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.th-sort:hover {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* 管理页「账号」：新建正式账号 */
+.admin-create {
+  margin: 4px 0 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper-2);
+}
+
+.admin-create .inline-form {
+  align-items: flex-end;
+}
+
+.admin-created p {
+  margin: 0 0 6px;
+}
+
+.admin-created .actions {
+  margin-top: 8px;
+}
+
+/* 账号设置：兑换额度 */
+.redeem {
+  margin-top: 12px;
+}
+
+.redeem input {
+  max-width: 240px;
+}
+
+/* 管理页「兑换码」：生成的表单 */
+.credit-code-form {
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+/* ---------- 封多久：时长的下拉框；选「自定义」时后面跟着填数的框和单位 ---------- */
+
+.ban-length {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+
+.ban-length select {
+  width: auto;
+}
+
+.ban-length .ban-length-amount:not([type='radio']) {
+  width: 6em;
+}
+
+.ban-length-error {
+  flex-basis: 100%;
+}
+
+/* 封号表单里「封多久」那一栏按内容的宽度来，不跟着「表单第二栏 120px」的规矩挤窄 */
+.inline-form .field:has(.ban-length) {
+  flex: 0 0 auto;
+}
+
+/* ---------- 管理页「注册」：应急开关、注册方式、开放注册的初始额度 ---------- */
+
+.registration-panel {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.registration-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 0;
+}
+
+.registration-label {
+  font-weight: 600;
+}
+
+.registration-pause {
+  margin-left: auto;
+}
+
+.registration-paused {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--seal);
+  border-radius: var(--radius);
+  color: var(--seal);
+}
+
+.registration-paused .btn {
+  margin-left: auto;
+}
+
+/* 每天最多送几份：输入框不用太宽 */
+.inline-form .field:has(#trial-daily) {
+  flex: 0 0 140px;
+}
+
+.user-related {
+  margin: 0 0 16px;
+}
+
+.user-related h3 {
+  margin: 0 0 4px;
+  font-size: 14px;
+}
+
+/* 开局能选的主持模型：模型一行，各身份一栏勾选 */
+.dm-model-groups td,
+.dm-model-groups th:not(:first-child) {
+  text-align: center;
+}
+
+.dm-model-groups tbody th {
+  font-weight: 500;
+  text-align: left;
+}
+
+/* 观看时申请加入以后：「等房主同意」和撤回申请 */
+.watch-banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}

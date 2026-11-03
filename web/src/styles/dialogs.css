@@ -1,0 +1,118 @@
+/* ---------- 对话框 ---------- */
+
+.modal {
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  padding: 0;
+  overflow-y: auto;
+  border: 0;
+  border-top: 3px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 24px 64px rgb(0 0 0 / 0.28);
+}
+
+.modal-wide {
+  width: min(780px, calc(100vw - 32px));
+}
+
+.modal::backdrop {
+  background: rgb(16 20 28 / 0.5);
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px 24px 24px;
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.modal-head h2 {
+  font-family: var(--font-story);
+  font-size: 22px;
+}
+
+.modal-close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.modal-close svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+.modal-close:hover {
+  background: var(--paper-2);
+  color: var(--ink);
+}
+
+.modal .usage-rules {
+  margin: 0;
+}
+
+@media (max-width: 560px) {
+  .modal-body {
+    padding: 16px;
+  }
+}
+
+/* ---------- 反馈：bug、意见、举报 ---------- */
+
+.feedback-quote {
+  margin: 0;
+  padding: 8px 12px;
+  border-left: 3px solid var(--rule-strong);
+  background: var(--paper-2);
+  color: var(--ink-soft);
+  font-size: 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.feedback-context summary {
+  color: var(--ink-soft);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.feedback-context dl {
+  margin-top: 8px;
+}
+
+.feedback-done {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ---------- 登录页的游客入口 ---------- */
+
+.guest-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule);
+}

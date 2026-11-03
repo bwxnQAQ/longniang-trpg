@@ -1,0 +1,11 @@
+node_modules/
+/web/dist/
+# 网站的数据（数据库、备份、日志）只在自己的电脑上；server/5e/data 是 5E 的规则数据，要上传
+/data/
+*.log
+# 设置文件里有 API 密钥，不能上传
+.env
+
+# 系统自动生成的文件
+.DS_Store
+Thumbs.db

@@ -1,0 +1,150 @@
+/* ==========================================================================
+   V0.7.0 商城、背包、装扮、排行
+   龙晶是整个网站的货币：顶栏右上角一直看得到，点了去商城。头像框是画在头像外面的一圈（只用 CSS）。
+   ========================================================================== */
+
+:root {
+  /* 青花：头像框、稀有装备 */
+  --porcelain: #2e5aac;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --porcelain: #8aabf0;
+  }
+}
+
+/* ---------- 顶栏：菜单项多了，放不下时主菜单左右滑（以前只有手机上这样）；右上角的龙晶 ---------- */
+
+.topnav-main {
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.topnav-main::-webkit-scrollbar {
+  display: none;
+}
+
+.topnav-main.more-right {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
+}
+
+.topnav-main.more-left {
+  -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 36px), transparent);
+  mask-image: linear-gradient(to left, #000 calc(100% - 36px), transparent);
+}
+
+.topnav-main.more-left.more-right {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 36px, #000 calc(100% - 36px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 36px, #000 calc(100% - 36px), transparent);
+}
+
+/* 站名不折成两行（菜单项多了以后站名被挤窄过） */
+.brand {
+  flex-shrink: 0;
+}
+
+.brand-name {
+  white-space: nowrap;
+}
+
+/* 菜单项（V0.7.1 多了「地下城」）：左右留白小一点，管理员多一个「管理」也放得下 */
+@media (min-width: 561px) {
+  .topnav-main a {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}
+
+/* 右上角也挤了：头像旁边的名字只在很宽的屏幕上显示 */
+@media (max-width: 1320px) {
+  .user-menu-name {
+    display: none;
+  }
+
+  .user-menu-button {
+    padding: 3px;
+  }
+}
+
+.topnav a.nav-crystals {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 2px;
+  padding: 3px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.topnav a.nav-crystals:hover {
+  border-color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 10%, transparent);
+}
+
+.nav-crystals .crystal-mark {
+  width: 8px;
+  height: 13px;
+}
+
+@media (max-width: 560px) {
+  .topnav a.nav-crystals {
+    gap: 4px;
+    padding: 2px 7px;
+  }
+}
+
+/* ---------- 头像框：--ring 是框的粗细（跟着头像大小走），--gap 是头像和框之间露出来的纸 ---------- */
+
+.avatar-framed {
+  --ring: 2px;
+  --gap: calc(var(--ring) * 0.75);
+}
+
+/* 墨痕：两道墨线 */
+.avatar-frame-ink {
+  box-shadow:
+    0 0 0 var(--gap) var(--paper),
+    0 0 0 calc(var(--gap) + var(--ring) * 0.5) var(--ink),
+    0 0 0 calc(var(--gap) + var(--ring) * 0.9) var(--paper),
+    0 0 0 calc(var(--gap) + var(--ring) * 1.4) var(--ink);
+}
+
+/* 青玉：一圈玉色，外沿深一点 */
+.avatar-frame-jade {
+  box-shadow:
+    0 0 0 var(--gap) var(--paper),
+    0 0 0 calc(var(--gap) + var(--ring)) var(--jade),
+    0 0 0 calc(var(--gap) + var(--ring) + 1px) color-mix(in srgb, var(--jade) 55%, var(--ink));
+}
+
+/* 朱印：一圈朱红 */
+.avatar-frame-seal {
+  box-shadow:
+    0 0 0 var(--gap) var(--paper),
+    0 0 0 calc(var(--gap) + var(--ring)) var(--seal);
+}
+
+/* 青花：青花蓝的圈，外面一圈点 */
+.avatar-frame-porcelain {
+  box-shadow:
+    0 0 0 var(--gap) var(--paper),
+    0 0 0 calc(var(--gap) + var(--ring) * 0.8) var(--porcelain);
+  outline: calc(var(--ring) * 0.75) dotted var(--porcelain);
+  outline-offset: calc(var(--gap) + var(--ring) * 1.2);
+}
+
+/* 描金：金圈带一点光 */
+.avatar-frame-gold {
+  box-shadow:
+    0 0 0 var(--gap) var(--paper),
+    0 0 0 calc(var(--gap) + var(--ring)) var(--gold),
+    0 0 calc(var(--ring) * 2.5) calc(var(--gap) + var(--ring)) color-mix(in srgb, var(--gold) 50%, transparent);
+}

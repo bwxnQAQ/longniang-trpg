@@ -1,0 +1,206 @@
+/* ---------- 剧本工坊：AI 生成、导入文本剧本 ---------- */
+
+.scenario-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.picker-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.picker-tab {
+  margin-bottom: -1px;
+  padding: 8px 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--muted);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.picker-tab:hover {
+  color: var(--ink);
+}
+
+.picker-tab[aria-selected='true'] {
+  border-bottom-color: var(--ink);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.studio-form {
+  width: 100%;
+  max-width: 560px;
+}
+
+.studio-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.studio-relations {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 16px;
+}
+
+.hint.is-over {
+  color: var(--seal);
+}
+
+.studio-form .hint .btn {
+  margin-left: 12px;
+}
+
+.scenario-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.scenario-source,
+.scenario-meta .tag-five {
+  margin-left: 8px;
+}
+
+/* 用 5E 规则玩（V1.0.0）：跟在「换一个剧本」后面的开关 */
+.scenario-actions .mod5e-switch {
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
+  font-size: 14px;
+}
+
+.scenario-actions .mod5e-switch input {
+  margin: 0;
+}
+
+.studio-job {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  max-width: 560px;
+  padding: 14px 16px;
+  border: 1px solid var(--rule-strong);
+  border-left: 3px solid var(--gold);
+  border-radius: var(--radius);
+  background: var(--field);
+}
+
+.studio-job.is-failed {
+  border-left-color: var(--seal);
+}
+
+.studio-job-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.studio-job-title .muted {
+  font-weight: 400;
+  font-size: 13px;
+}
+
+.studio-job-error {
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.studio-job-notes {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.studio-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.studio-steps li {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  grid-template-areas:
+    'no label'
+    'no detail';
+  column-gap: 10px;
+  color: var(--muted);
+  counter-increment: step;
+}
+
+.studio-steps li::before {
+  content: counter(step);
+  grid-area: no;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid var(--rule-strong);
+  border-radius: 50%;
+  font-size: 12px;
+  line-height: 19px;
+  text-align: center;
+}
+
+.studio-steps li.is-done::before {
+  content: '✓';
+  border-color: var(--jade);
+  color: var(--jade);
+}
+
+.studio-steps li.is-current {
+  color: var(--ink);
+}
+
+.studio-steps li.is-current::before {
+  border-color: var(--gold);
+  background: var(--gold);
+  color: var(--paper);
+}
+
+.studio-step-label {
+  grid-area: label;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.studio-step-detail {
+  grid-area: detail;
+  font-size: 13px;
+}
+
+.studio-reveal {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 560px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--seal);
+  background: var(--paper-2);
+  font-size: 14px;
+}
+
+@media (max-width: 640px) {
+  .studio-row,
+  .studio-relations {
+    grid-template-columns: 1fr;
+  }
+}

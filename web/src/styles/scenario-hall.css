@@ -1,0 +1,329 @@
+/* ---------- 剧本大厅（V0.5.0）：每个剧本像一册线装书，书脊是分区的颜色 ---------- */
+
+.shelf-tabs {
+  display: flex;
+  gap: 2px;
+  margin: 4px 0 20px;
+  border-bottom: 1px solid var(--rule);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.shelf-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.shelf-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 8px 14px 9px;
+  margin-bottom: -1px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--ink-soft);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.shelf-tab:hover {
+  color: var(--ink);
+}
+
+.shelf-tab-name {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.shelf-tab-sub {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.shelf-tab[aria-selected='true'] {
+  border-bottom-color: var(--ink);
+  color: var(--ink);
+}
+
+.shelf-tab-puzzle[aria-selected='true'] {
+  border-bottom-color: var(--cat-puzzle);
+  color: var(--cat-puzzle);
+}
+
+.shelf-tab-horror[aria-selected='true'] {
+  border-bottom-color: var(--cat-horror);
+  color: var(--cat-horror);
+}
+
+.shelf-tab-combat[aria-selected='true'] {
+  border-bottom-color: var(--cat-combat);
+  color: var(--cat-combat);
+}
+
+.shelf-tab-adventure[aria-selected='true'] {
+  border-bottom-color: var(--cat-adventure);
+  color: var(--cat-adventure);
+}
+
+.shelf-tab-social[aria-selected='true'] {
+  border-bottom-color: var(--cat-social);
+  color: var(--cat-social);
+}
+
+.shelf {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shelf-item {
+  --spine: var(--rule-strong);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 24px;
+  align-items: start;
+  padding: 16px 18px 16px 20px;
+  border: 1px solid var(--rule);
+  border-left: 5px solid var(--spine);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--field);
+}
+
+.spine-puzzle {
+  --spine: var(--cat-puzzle);
+}
+
+.spine-horror {
+  --spine: var(--cat-horror);
+}
+
+.spine-combat {
+  --spine: var(--cat-combat);
+}
+
+.spine-adventure {
+  --spine: var(--cat-adventure);
+}
+
+.spine-social {
+  --spine: var(--cat-social);
+}
+
+.shelf-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+.shelf-title {
+  margin: 0;
+  font-family: var(--font-story);
+  font-size: 22px;
+  letter-spacing: 0.04em;
+}
+
+.shelf-meta {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.shelf-intro {
+  max-width: 40em;
+  margin: 8px 0 0;
+  font-family: var(--font-story);
+  font-size: 15px;
+  line-height: 1.85;
+}
+
+.shelf-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.shelf-author {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.shelf-author-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink);
+}
+
+.shelf-action {
+  align-self: center;
+}
+
+.shelf-create {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 640px) {
+  .shelf-item {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 14px 14px 14px 16px;
+  }
+
+  .shelf-action {
+    justify-self: start;
+  }
+}
+
+/* 我的投稿 */
+.my-submissions {
+  margin-top: 40px;
+}
+
+.submission-list {
+  margin: 0;
+  padding: 0;
+  border-top: 2px solid var(--ink);
+  list-style: none;
+}
+
+.submission {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.submission-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+
+.submission-title {
+  font-family: var(--font-story);
+  font-size: 17px;
+}
+
+.submission-status {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.status-pending {
+  color: var(--gold-deep);
+}
+
+.status-approved {
+  color: var(--jade);
+}
+
+.status-rejected {
+  color: var(--seal);
+}
+
+.status-withdrawn {
+  color: var(--muted);
+}
+
+.submission-reason {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.submission-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* 管理页：投稿审核 */
+.submissions-review {
+  margin-bottom: 36px;
+}
+
+.submission-intro {
+  max-width: 40em;
+  margin: 6px 0 0;
+  font-family: var(--font-story);
+  line-height: 1.8;
+}
+
+.submissions-done {
+  margin-top: 12px;
+}
+
+.submissions-done summary {
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+/* 对局「设置」里的投稿；V0.9.2 一键投稿：结局下面、开团准备里、剧本编辑器里 */
+.submission-state {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.submission-form {
+  margin-top: 8px;
+}
+
+.ending-submit .ending-submit-title {
+  margin-bottom: 8px;
+}
+
+.submit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.submit-error {
+  margin: 8px 0 0;
+}
+
+/* 开团准备：跟在「换一个剧本」那一排按钮后面，表单、出错另起一行 */
+.scenario-actions .submission-state {
+  margin: 0;
+}
+
+.scenario-actions-row,
+.scenario-actions .submit-error {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+/* 剧本编辑器：这个标题最近一次投稿 */
+.ed-submission {
+  margin: 0 0 12px;
+}
+
+/* 个人主页：关注的人数、作品 */
+.profile-followers {
+  margin: 2px 0 0;
+  font-size: 13px;
+}
+
+.profile-works {
+  margin: 28px 0;
+}
+
+.profile-works .shelf-title {
+  font-size: 19px;
+}

@@ -1,0 +1,396 @@
+/* ---------- 个人主页 ---------- */
+
+.profile {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.profile-head {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid var(--ink);
+}
+
+.profile-who {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.profile-who h1 {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-family: var(--font-story);
+  font-size: 32px;
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
+}
+
+.profile-presence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 13px;
+}
+
+.profile-bio {
+  max-width: 36em;
+  font-family: var(--font-story);
+  font-size: 17px;
+  line-height: 1.85;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.profile-stats > div {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  padding: 12px 6px;
+}
+
+.profile-stats > div + div {
+  border-left: 1px solid var(--rule);
+}
+
+.profile-stats dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.profile-stats dd {
+  margin: 0;
+  font-family: var(--font-story);
+  font-size: 26px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 个人主页上的角色卡（V0.8.1）：和「我的角色」里的卡一个样子（上边一条地下城的颜色），只看不改 */
+.profile-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: 14px;
+}
+
+.profile-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--cat-dungeon);
+  border-radius: 0 0 var(--radius) var(--radius);
+  background: var(--field);
+}
+
+.profile-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 12px;
+}
+
+.profile-card-head h3 {
+  margin: 0;
+  font-family: var(--font-story);
+  font-size: 20px;
+  overflow-wrap: anywhere;
+}
+
+.profile-card-look {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+/* 七项属性：一行七个小格子 */
+.profile-card-attrs {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+  margin: 0;
+}
+
+.profile-card-attrs > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  padding: 3px 0;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
+
+.profile-card-attrs dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.profile-card-attrs dd {
+  margin: 0;
+  font-family: var(--font-story);
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.profile-card-vitals,
+.profile-card-record {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 12px;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.profile-card-line {
+  margin: 0;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+/* 身上的装备：只列穿着的，左边一条按稀有度的颜色 */
+.profile-card-gear {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+
+.profile-card-gear li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 1px 8px;
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--slot-edge, var(--rule));
+  border-radius: 4px;
+}
+
+.profile-card-slot {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.profile-card .doll-abilities {
+  margin-top: 0;
+}
+
+/* 管理员在主页上封号（V0.8.1） */
+.profile-ban {
+  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--seal);
+  border-radius: var(--radius);
+}
+
+.room-row.is-closed {
+  cursor: default;
+}
+
+.room-row.is-closed:hover {
+  background: none;
+}
+
+@media (max-width: 560px) {
+  .profile-head {
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .profile-head .avatar {
+    width: 64px;
+    height: 64px;
+  }
+
+  .profile-who h1 {
+    font-size: 26px;
+  }
+
+  .profile-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .profile-stats > div:nth-child(3) {
+    border-left: 0;
+  }
+
+  .profile-stats > div:nth-child(n + 3) {
+    border-top: 1px solid var(--rule);
+  }
+}
+
+/* ---------- 账号设置 ---------- */
+
+.account {
+  display: flex;
+  flex-direction: column;
+}
+
+.account .page-head {
+  margin-bottom: 8px;
+}
+
+.account-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 0 30px;
+  border-top: 2px solid var(--ink);
+}
+
+.account-section > h2,
+.account-section .section-head h2 {
+  font-family: var(--font-story);
+  font-size: 21px;
+}
+
+.account-section .facts {
+  margin: 0;
+}
+
+.avatar-editor {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.avatar-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+
+.avatar-editor-actions .hint,
+.avatar-editor-actions .form-error {
+  flex-basis: 100%;
+}
+
+.my-reports > li {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.my-report-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  font-size: 14px;
+}
+
+.my-report-state {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.my-report-state.is-done {
+  color: var(--jade);
+}
+
+/* ---------- 规则页：左边目录 ---------- */
+
+.rules-layout {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  align-items: start;
+  gap: 44px;
+}
+
+.rules-toc {
+  position: sticky;
+  top: calc(var(--topbar-h) + 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 2px solid var(--ink);
+  font-size: 14px;
+}
+
+.page-bare .rules-toc {
+  top: 24px;
+}
+
+.rules-toc-title {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.rules-toc ul {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rules-toc ul a {
+  display: block;
+  padding: 3px 0;
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+.rules-toc ul a:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+.rules section[id] {
+  scroll-margin-top: calc(var(--topbar-h) + 16px);
+}
+
+.terms {
+  max-width: 720px;
+}
+
+@media (max-width: 900px) {
+  .rules-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .rules-toc {
+    position: static;
+  }
+
+  .rules-toc ul {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0 14px;
+  }
+}

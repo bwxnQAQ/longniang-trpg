@@ -1,0 +1,194 @@
+/* ---------- 管理和账号 ---------- */
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 44px;
+}
+
+.section h2 {
+  font-family: var(--font-story);
+  font-size: 22px;
+}
+
+.inline-form {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.inline-form .field {
+  flex: 1 1 220px;
+}
+
+.inline-form .field:nth-of-type(2) {
+  flex: 0 0 120px;
+}
+
+/* ---------- 规则页 ---------- */
+
+.rules {
+  max-width: 720px;
+}
+
+.rules section {
+  margin-top: 36px;
+}
+
+.rules h2 {
+  margin-bottom: 12px;
+  font-family: var(--font-story);
+  font-size: 24px;
+}
+
+.rules h3 {
+  margin: 24px 0 8px;
+  font-size: 16px;
+}
+
+.rules p,
+.rules li {
+  line-height: 1.8;
+}
+
+.rules p + p,
+.rules p + ul,
+.rules .table-wrap + p,
+.rules ul + .table-wrap,
+.rules p + .table-wrap,
+.rules .table-wrap + ul {
+  margin-top: 12px;
+}
+
+.rules ul,
+.rules ol {
+  margin: 0;
+  padding-left: 1.4em;
+}
+
+.rules .table th[scope='row'] {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.rules-lead {
+  font-family: var(--font-story);
+  font-size: 17px;
+}
+
+.rules-back {
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.table-numbers td {
+  font-variant-numeric: tabular-nums;
+}
+
+.account-logout {
+  margin-top: 32px;
+}
+
+.flash {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 8px 8px 8px 16px;
+  border-left: 3px solid var(--ink);
+  background: var(--paper-2);
+  font-size: 14px;
+}
+
+.callout {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 16px;
+  border-left: 3px solid var(--ink);
+  background: var(--paper-2);
+}
+
+.link-line {
+  font-family: var(--font-code);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table th {
+  padding: 8px 10px;
+  border-bottom: 2px solid var(--ink);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table td,
+.table tbody th {
+  padding: 10px;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: middle;
+}
+
+/* 表体里的行标题看起来和普通格子一样，只是字重一点 */
+.table tbody th {
+  color: var(--ink);
+  font-size: 14px;
+  text-align: left;
+}
+
+.table tr.is-dim td {
+  color: var(--muted);
+}
+
+.choice.is-dim {
+  opacity: 0.55;
+}
+
+.row-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 20px;
+  margin: 0 0 28px;
+}
+
+.facts dt {
+  color: var(--muted);
+}
+
+.facts dd {
+  margin: 0;
+}
+
+/* 5E 模组（V0.9.0）：SRD 5.2.1 的说明和署名（署名是英文原文，网址很长，窄屏上要能断行） */
+.rules .rules-srd {
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+.rules .rules-srd + .rules-srd {
+  margin-top: 8px;
+}

@@ -1,0 +1,81 @@
+/* ---------- 管理页「版本和数据」：最近的错误（V0.8.0） ---------- */
+
+.error-log {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--rule);
+}
+
+.error-log > li {
+  border-bottom: 1px solid var(--rule);
+}
+
+.error-log summary {
+  display: flex;
+  align-items: baseline;
+  gap: 4px 12px;
+  min-width: 0;
+  padding: 8px 2px;
+  font-size: 14px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.error-log summary::-webkit-details-marker {
+  display: none;
+}
+
+.error-log summary::before {
+  flex: none;
+  content: '▸';
+  color: var(--muted);
+}
+
+.error-log details[open] > summary::before {
+  content: '▾';
+}
+
+.error-log-time {
+  flex: none;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.error-log-first {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-code);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.error-log-text {
+  max-height: 360px;
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  overflow: auto;
+  border-radius: var(--radius);
+  background: var(--paper-2);
+  color: var(--ink);
+  font-family: var(--font-code);
+  font-size: 12.5px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* 手机上：时间单独一行，错误的第一行在下面 */
+@media (max-width: 560px) {
+  .error-log summary {
+    flex-wrap: wrap;
+  }
+
+  .error-log-first {
+    flex-basis: 100%;
+    padding-left: 1.1em;
+  }
+}

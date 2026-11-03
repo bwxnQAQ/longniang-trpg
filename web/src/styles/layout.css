@@ -1,0 +1,245 @@
+/* ---------- 顶栏 ---------- */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+}
+
+.topbar-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.topbar-start {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.history-nav {
+  display: flex;
+  gap: 2px;
+}
+
+.nav-arrow {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.nav-arrow svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.nav-arrow:hover:not(:disabled) {
+  color: var(--ink);
+  background: var(--paper-2);
+}
+
+.nav-arrow:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.brand-name {
+  font-family: var(--font-story);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.topnav {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.topnav a,
+.linklike {
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--ink-soft);
+  font-size: 14px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.topnav a:hover,
+.linklike:hover {
+  color: var(--ink);
+  background: var(--paper-2);
+}
+
+.topnav a[aria-current='page'] {
+  color: var(--ink);
+  font-weight: 600;
+  border-radius: 0;
+  box-shadow: inset 0 -2px 0 var(--ink);
+}
+
+/* ---------- 页面骨架 ---------- */
+
+.page {
+  max-width: 880px;
+  /* 内容少的页面，页脚也在窗口最下面 */
+  min-height: calc(100dvh - var(--topbar-h) - var(--footer-h));
+  margin: 0 auto;
+  padding: 36px 24px 64px;
+}
+
+.page-wide {
+  max-width: 1180px;
+  padding: 20px 24px;
+}
+
+/* 没有顶栏的页面（不登录时看的规则页） */
+.page-bare {
+  min-height: calc(100dvh - var(--footer-h));
+}
+
+/* ---------- 页脚：作者和版本号，一直钉在窗口最下面 ---------- */
+
+.site-footer {
+  position: sticky;
+  bottom: 0;
+  /* 比顶栏低一层：顶栏的下拉菜单盖得住页脚 */
+  z-index: 9;
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 18px;
+  min-height: var(--footer-h);
+  padding: 6px 24px;
+  border-top: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.site-footer-stage {
+  margin-left: 0.5em;
+  letter-spacing: 0.04em;
+}
+
+/* 内测交流的 QQ 群（V0.9.0）：点一下选中整个号码，方便复制 */
+.site-footer-qq {
+  margin-left: 0.75em;
+  letter-spacing: 0.04em;
+}
+
+.site-footer-qq-number {
+  color: var(--ink);
+  user-select: all;
+}
+
+/* 窄屏：页脚折成两行，作者和版本号（带 QQ 群号）一行，链接一行 */
+.site-footer-break {
+  display: none;
+}
+
+@media (max-width: 560px) {
+  :root {
+    /* 窄屏的顶栏矮一点 */
+    --topbar-h: 57px;
+    --footer-h: 53px;
+  }
+
+  .site-footer {
+    gap: 0 12px;
+    padding: 6px 12px;
+  }
+
+  .site-footer-break {
+    display: block;
+    flex-basis: 100%;
+    height: 0;
+  }
+}
+
+/* 特别窄的手机：字距收紧，第一行照样放得下作者、版本号和 QQ 群号 */
+@media (max-width: 359px) {
+  .site-footer .site-footer-author,
+  .site-footer .site-footer-version,
+  .site-footer .site-footer-stage,
+  .site-footer .site-footer-qq {
+    letter-spacing: 0;
+  }
+
+  .site-footer .site-footer-qq {
+    margin-left: 0.5em;
+  }
+}
+
+.site-footer-author {
+  font-family: var(--font-story);
+  letter-spacing: 0.08em;
+}
+
+.site-footer-version {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.page-head h1 {
+  font-family: var(--font-story);
+  font-size: 34px;
+  letter-spacing: 0.02em;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.page-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 40px 0;
+}

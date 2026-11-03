@@ -1,0 +1,530 @@
+/* ---------- 管理后台：分级、账号批量处理、举报和反馈、公告、模型、操作记录 ---------- */
+
+.admin .page-head {
+  align-items: baseline;
+}
+
+.admin-who {
+  flex-basis: 100%;
+  margin-top: -10px;
+  font-size: 14px;
+}
+
+.admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.admin-toolbar input[type='search'] {
+  flex: 0 1 320px;
+  min-height: 36px;
+  padding: 6px 12px;
+}
+
+.admin-toolbar select {
+  width: auto;
+  min-height: 36px;
+  padding: 6px 10px;
+}
+
+.admin-toolbar .choice {
+  padding: 0;
+}
+
+.admin-summary {
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+/* 账号页最上面一行：账号数在左，新账号的初始额度在右（窄的时候折到下一行） */
+.admin-summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 16px;
+  margin-bottom: 8px;
+}
+
+.admin-summary-row .admin-summary {
+  margin: 0;
+}
+
+.start-credit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.start-credit strong {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.start-credit-form input {
+  width: 8em;
+}
+
+.cell-check {
+  width: 36px;
+}
+
+.cell-check input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--ink);
+  vertical-align: middle;
+}
+
+.table td.cell-uid {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.cell-note {
+  max-width: 14em;
+}
+
+.cell-note span {
+  display: block;
+  overflow: hidden;
+  color: var(--ink-soft);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.table tr.is-selected td {
+  background: color-mix(in srgb, var(--focus) 7%, transparent);
+}
+
+/* 批量处理：勾选了账号才出现，钉在顶栏下面 */
+.batch-bar {
+  position: sticky;
+  top: calc(var(--topbar-h) + 6px);
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 14px;
+  border-left: 3px solid var(--ink);
+  background: var(--paper-2);
+}
+
+.batch-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  font-size: 14px;
+}
+
+.batch-row select,
+.batch-row input:not([type='checkbox']) {
+  width: auto;
+  min-height: 32px;
+  padding: 4px 10px;
+  font-size: 14px;
+}
+
+.batch-row input:not([type='checkbox']):not(.input-short) {
+  flex: 1 1 180px;
+}
+
+.batch-row input.input-short:not([type='checkbox']) {
+  width: 90px;
+}
+
+.batch-confirm {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+
+.batch-result {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.user-detail-meta {
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.user-detail-box textarea {
+  min-height: 72px;
+}
+
+/* 管理员的权限：站长逐项勾选 */
+.role-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border-left: 3px solid var(--gold);
+  background: var(--field);
+}
+
+.role-editor h3 {
+  font-size: 14px;
+}
+
+.role-editor-closed {
+  align-items: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.perm-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0 22px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.perm-list .choice {
+  padding: 5px 0;
+}
+
+.admin-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.admin-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-card-head > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-card-head p {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  line-height: 1.5;
+}
+
+/* 举报和反馈 */
+.segmented {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+}
+
+.segment {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 12px;
+  border: 0;
+  background: none;
+  color: var(--ink-soft);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.segment + .segment {
+  border-left: 1px solid var(--rule-strong);
+}
+
+.segment:hover {
+  background: var(--paper-2);
+}
+
+.segment.is-on {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.segment.is-on .tab-count-new {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.report-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* 人民币、美元切换：小一号的分段按钮 */
+.currency-switch {
+  flex: none;
+  align-self: flex-start;
+}
+
+.currency-switch .segment {
+  padding: 3px 10px;
+  font-size: 12px;
+}
+
+/* 填金额的输入框，后面跟着选币种 */
+.money-input {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+/* 要压过上面「输入框一律占满一行」的通用写法（它带两个 :not，比单写 input 优先） */
+.money-input input:not([type='radio']):not([type='checkbox']) {
+  flex: 0 0 auto;
+  width: 8em;
+  min-width: 6em;
+}
+
+.money-input .currency-select {
+  flex: 0 0 auto;
+}
+
+/* 填金额的那一栏按输入框加币种的宽度来，不跟着「表单第二栏 120px」的规矩挤窄（兑换码的额度就是第二栏） */
+.inline-form .field:has(.money-input) {
+  flex: 0 0 auto;
+}
+
+.currency-select {
+  width: auto;
+  min-height: 36px;
+  padding: 6px 8px;
+}
+
+/* 大厅左上角的额度下面、账号设置里的额度后面 */
+.me-card-credit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.credit-dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+
+/* 账号页最上面一行右边：新账号的初始额度、汇率、一键清零（站长） */
+.credit-settings {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 20px;
+}
+
+.zero-credit {
+  flex-wrap: wrap;
+}
+
+.report {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 0 14px 14px;
+  border-bottom: 1px solid var(--rule);
+  border-left: 3px solid var(--gold);
+  font-size: 14px;
+}
+
+.report.is-done {
+  border-left-color: var(--rule-strong);
+  color: var(--ink-soft);
+}
+
+.report-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+
+.report-about {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.report-target blockquote {
+  margin: 4px 0 0;
+  padding: 6px 10px;
+  border-left: 2px solid var(--rule-strong);
+  background: var(--paper-2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.report-body {
+  max-width: 48em;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+.report-steps {
+  padding-left: 10px;
+  border-left: 2px solid var(--rule);
+}
+
+.report-context summary {
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.facts-tight {
+  gap: 4px 14px;
+  margin: 8px 0 0;
+  font-size: 13px;
+}
+
+.report-handle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.report-handle select {
+  width: auto;
+  min-height: 32px;
+  padding: 4px 8px;
+  font-size: 14px;
+}
+
+.report-handle input:not([type='checkbox']) {
+  flex: 1 1 240px;
+  min-height: 32px;
+  padding: 4px 10px;
+  font-size: 14px;
+}
+
+.report-handle .form-error {
+  flex-basis: 100%;
+}
+
+.tag-kind-report {
+  border-color: color-mix(in srgb, var(--seal) 60%, transparent);
+  color: var(--seal);
+}
+
+.tag-kind-feedback {
+  border-color: var(--jade);
+  color: var(--jade);
+}
+
+.tag-kind-bug {
+  border-color: var(--focus);
+  color: var(--focus);
+}
+
+/* 公告 */
+.announce-form {
+  max-width: 640px;
+  margin-bottom: 32px;
+}
+
+.audience-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 20px;
+}
+
+.announcement-admin {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.announcement-admin-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.announcement-admin-head h3 {
+  font-family: var(--font-story);
+  font-size: 18px;
+}
+
+.announcement-admin-toggle {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.announcement-admin-toggle:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--rule-strong);
+}
+
+/* 模型 */
+.model-table {
+  display: flex;
+  flex-direction: column;
+  border-top: 2px solid var(--ink);
+}
+
+.model-row {
+  display: grid;
+  grid-template-columns: 6em minmax(220px, 340px) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.model-row select {
+  min-height: 36px;
+  padding: 6px 10px;
+}
+
+.model-role {
+  font-weight: 600;
+}
+
+.model-source {
+  font-size: 13px;
+}
+
+.model-notes {
+  color: var(--ink-soft);
+}
+
+@media (max-width: 760px) {
+  .model-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .batch-bar {
+    position: static;
+  }
+}

@@ -1,0 +1,622 @@
+/* ---------- 跑团：开团准备 ---------- */
+
+.setup-column {
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.setup {
+  display: flex;
+  flex-direction: column;
+}
+
+.setup-step {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 20px 0 28px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.setup-step > h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-family: var(--font-story);
+  font-size: 22px;
+}
+
+.step-no {
+  color: var(--gold-deep);
+  font-size: 26px;
+}
+
+.scenario-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.scenario-list li {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 14px 0;
+  border-top: 1px solid var(--rule);
+}
+
+.scenario-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 38em;
+}
+
+.scenario-title {
+  font-family: var(--font-story);
+  font-size: 22px;
+  letter-spacing: 0.04em;
+}
+
+.scenario-meta {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.scenario-tone {
+  font-family: var(--font-story);
+}
+
+.scenario-intro {
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.scenario-background,
+.scenario-start {
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.8;
+  white-space: pre-line;
+}
+
+.scenario-import {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.my-character {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: 38em;
+}
+
+.my-character-name {
+  font-family: var(--font-story);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.character-form {
+  width: 100%;
+  max-width: 560px;
+}
+
+.role-list {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--rule);
+}
+
+.role-option {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    'radio name'
+    '. text'
+    '. taken';
+  column-gap: 10px;
+  padding: 10px 6px;
+  border-bottom: 1px solid var(--rule);
+  cursor: pointer;
+}
+
+.role-option input {
+  grid-area: radio;
+  width: 16px;
+  height: 16px;
+  margin: 4px 0 0;
+  accent-color: var(--ink);
+}
+
+.role-option:hover {
+  background: var(--paper-2);
+}
+
+.role-option.is-active {
+  background: var(--paper-2);
+  box-shadow: inset 3px 0 0 var(--ink);
+}
+
+.role-option.is-taken {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.role-name {
+  grid-area: name;
+  font-family: var(--font-story);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.role-public {
+  grid-area: text;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.role-taken {
+  grid-area: taken;
+  color: var(--seal);
+  font-size: 13px;
+}
+
+.attr-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.attr-row {
+  display: grid;
+  grid-template-columns: 3.5em 1fr 84px;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.attr-name {
+  font-weight: 600;
+}
+
+.attr-covers {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.attr-row select {
+  min-height: 34px;
+  padding: 4px 8px;
+}
+
+.specialty-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.suggestions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ready-list {
+  list-style: none;
+  width: 100%;
+  max-width: 420px;
+  margin: 0;
+  padding: 0;
+}
+
+.ready-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--rule);
+  color: var(--muted);
+}
+
+.ready-list li.is-ready {
+  color: var(--ink);
+}
+
+.tab-panel-chat {
+  display: flex;
+  flex-direction: column;
+  padding-top: 0;
+  overflow: hidden;
+}
+
+.tab-count {
+  margin-left: 4px;
+  color: var(--gold-deep);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* ---------- 跑团：角色卡和线索 ---------- */
+
+.sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sheet section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sheet-name {
+  font-family: var(--font-story);
+  font-size: 24px;
+  letter-spacing: 0.04em;
+}
+
+.sheet-role {
+  color: var(--ink-soft);
+}
+
+.sheet-dead {
+  color: var(--seal);
+  font-weight: 700;
+}
+
+.sheet-public {
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.sheet-secret {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 12px;
+  border-left: 3px solid var(--gold);
+}
+
+.sheet-secret h3,
+.sheet-label {
+  color: var(--gold-deep);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.sheet-label {
+  color: var(--muted);
+}
+
+.sheet-secret p {
+  font-size: 14px;
+}
+
+.sheet-label-inline {
+  margin-right: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.attr-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  margin: 0;
+  border-top: 2px solid var(--ink);
+  border-bottom: 1px solid var(--rule);
+}
+
+.attr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 0;
+}
+
+.attr + .attr {
+  border-left: 1px solid var(--rule);
+}
+
+.attr dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.attr dd {
+  margin: 0;
+  font-family: var(--font-story);
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.sheet-specialties {
+  font-size: 14px;
+}
+
+.track {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.track-boxes {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.track-box {
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid var(--ink-soft);
+  border-radius: 2px;
+}
+
+.track-box.is-filled {
+  border-color: var(--seal);
+  background: var(--seal);
+}
+
+.track-value {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.track-value.is-hurt {
+  color: var(--seal);
+  font-weight: 600;
+}
+
+.sheet-items {
+  margin: 0;
+  padding-left: 1.2em;
+  font-size: 14px;
+}
+
+.sheet-place {
+  padding-top: 10px;
+  border-top: 1px solid var(--rule);
+}
+
+.place-name {
+  font-family: var(--font-story);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.place-desc,
+.place-exits {
+  font-size: 14px;
+}
+
+.place-exits {
+  color: var(--ink-soft);
+}
+
+.sheet-visited summary {
+  color: var(--ink-soft);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.sheet-visited ul {
+  margin: 8px 0 0;
+  padding-left: 1.2em;
+  font-size: 13px;
+}
+
+.clue-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.clue {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.clue h3 {
+  font-family: var(--font-story);
+  font-size: 17px;
+}
+
+.clue p {
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.clue-time {
+  color: var(--gold-deep);
+  font-size: 12px;
+}
+
+.clue-share-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+
+.clue-share-row .btn {
+  padding-left: 0;
+}
+
+.clue-share {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--field);
+}
+
+.clue-share fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.clue-share legend {
+  margin-bottom: 2px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.clue-share .choice {
+  padding: 3px 0;
+}
+
+.clue-share .choice span {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.clue-share-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* 你不在的时候：离开一阵子再回来，先看这段时间发生的事 */
+.catchup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 42vh;
+  overflow-y: auto;
+  margin-bottom: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--rule-strong);
+  border-left: 3px solid var(--gold);
+  border-radius: var(--radius);
+  background: var(--field);
+}
+
+.catchup-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 12px;
+}
+
+.catchup-head h2 {
+  font-family: var(--font-story);
+  font-size: 18px;
+}
+
+.catchup-facts {
+  flex: 1;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.catchup-summary {
+  font-family: var(--font-story);
+  font-size: 15px;
+  line-height: 1.85;
+}
+
+.catchup-summary.is-pending {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: 13px;
+}
+
+.catchup-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.catchup-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.catchup-time {
+  margin-right: 8px;
+  color: var(--gold-deep);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.catchup-text {
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.catchup-recent > summary {
+  width: fit-content;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.catchup-recent[open] > summary {
+  margin-bottom: 8px;
+}
+
+.catchup > .btn {
+  align-self: flex-start;
+}
+
+.log-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--gold-deep);
+  font-size: 12px;
+  scroll-margin-top: 12px;
+}
+
+.log-divider::before,
+.log-divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--gold);
+}
+
+/* 有人把线索告诉了别人：只有当事人看得到的一行 */
+.entry-share {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 10px;
+  border-left: 2px solid var(--gold);
+  background: var(--paper-2);
+  font-size: 13px;
+}
+
+.entry-share .private-mark {
+  margin-left: 8px;
+}

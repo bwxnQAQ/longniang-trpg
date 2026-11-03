@@ -1,0 +1,208 @@
+/* ==========================================================================
+   V0.2.0：大厅三栏、头像、好友和私聊、通知、公告、大厅聊天、个人主页、反馈、
+   对局页面的聊天和设置、观看、开局对话框、选身份、管理员分级和后台
+   沿用纸和墨：粗墨线压在每一块的顶上，不用卡片阴影；未读数用描金，在线用青绿，观看用青花蓝。
+   ========================================================================== */
+
+:root {
+  --plum: #7c4a7c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --plum: #cf9bcf;
+  }
+}
+
+/* ---------- 页面宽度：大厅用满宽 ---------- */
+
+.page-full {
+  max-width: 1440px;
+  padding: 20px 24px 40px;
+}
+
+.section-title {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 0 0 10px;
+  font-family: var(--font-story);
+  font-size: 22px;
+  letter-spacing: 0.02em;
+}
+
+.side-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.side-title .muted {
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+/* ---------- 数字小圆点（未读）和顶栏 ---------- */
+
+.count,
+.tab-count-new {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--gold-deep);
+  color: var(--paper);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  vertical-align: 1px;
+}
+
+.topnav .count {
+  margin-left: 4px;
+}
+
+.tab-count-new {
+  margin-left: 4px;
+}
+
+.nav-bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.topnav a.nav-bell {
+  padding: 6px 8px;
+}
+
+.nav-bell svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.nav-bell .count {
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin: 0;
+  transform: translate(35%, -15%);
+}
+
+.user-menu {
+  position: relative;
+  margin-left: 6px;
+}
+
+.user-menu-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 10px 3px 3px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: none;
+  color: var(--ink-soft);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.user-menu-button:hover,
+.user-menu-button[aria-expanded='true'] {
+  border-color: var(--rule);
+  background: var(--paper-2);
+  color: var(--ink);
+}
+
+.user-menu-name {
+  max-width: 8em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-menu-list {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  min-width: 190px;
+  padding: 6px;
+  border: 1px solid var(--rule-strong);
+  border-top: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--field);
+  box-shadow: 0 10px 28px rgb(0 0 0 / 0.14);
+}
+
+.user-menu-who {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 4px;
+  padding: 6px 10px 8px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.user-menu-list button {
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--ink);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.user-menu-list button:hover {
+  background: var(--paper-2);
+}
+
+.user-menu-list .user-menu-logout {
+  margin-top: 4px;
+  border-top: 1px solid var(--rule);
+  border-radius: 0 0 4px 4px;
+  color: var(--ink-soft);
+}
+
+.site-footer .site-footer-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 12px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.site-footer .site-footer-link:hover {
+  background: none;
+  color: var(--ink);
+  text-decoration: underline;
+}

@@ -1,0 +1,195 @@
+/*
+  视觉方向：纸和墨。正文是墨色字压在冷调的纸面上；标志是龙娘趴在骰子上的那张图（青花蓝、描金），
+  只有状态戳用朱红，在线状态用青绿。故事叙述用宋体，像在读书；界面和场外聊天用黑体，像桌边说话。
+  不加载网络字体：国内打不开谷歌字体，直接用系统自带的中文字体。
+*/
+
+:root {
+  --paper: #f2f3ef;
+  --paper-2: #e8eae4;
+  --field: #fbfbf9;
+  --ink: #1d2330;
+  --ink-soft: #4b5263;
+  --muted: #646a79;
+  --rule: #d3d6ce;
+  --rule-strong: #b6bab0;
+  --seal: #b23a2e;
+  --seal-ink: #f8eee9;
+  --gold: #c08a2c;
+  --gold-deep: #8f6418;
+  --jade: #2d7563;
+  --focus: #2e5aac;
+  /* 剧本分区的颜色 */
+  --cat-puzzle: #2e5aac;
+  --cat-horror: #5d3f73;
+  --cat-combat: #b23a2e;
+  --cat-adventure: #2d7563;
+  --cat-social: #8f6418;
+  --radius: 6px;
+  --topbar-h: 61px;
+  --footer-h: 33px;
+  --font-ui: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans CJK SC', 'Source Han Sans SC', system-ui, sans-serif;
+  --font-story: 'Source Han Serif SC', 'Noto Serif CJK SC', 'Noto Serif SC', 'Songti SC', 'STSong', 'SimSun', serif;
+  --font-code: ui-monospace, 'Cascadia Mono', 'SF Mono', Consolas, monospace;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #191c23;
+    --paper-2: #232731;
+    --field: #1e222b;
+    --ink: #e8e4da;
+    --ink-soft: #bab7af;
+    --muted: #9a9da6;
+    --rule: #343a46;
+    --rule-strong: #4c5362;
+    --seal: #d85a45;
+    --seal-ink: #fff3ee;
+    --gold: #e0b25a;
+    --gold-deep: #a77b2a;
+    --jade: #5bbea3;
+    --focus: #8aabf0;
+    --cat-puzzle: #8aabf0;
+    --cat-horror: #bc9fd6;
+    --cat-combat: #e2735f;
+    --cat-adventure: #5bbea3;
+    --cat-social: #e0b25a;
+    color-scheme: dark;
+  }
+}
+
+/* ---------- 基础 ---------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration-color: var(--rule-strong);
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  text-decoration-color: currentColor;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -48px;
+  z-index: 20;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 8px 12px;
+  border-radius: var(--radius);
+}
+
+.skip-link:focus {
+  top: 8px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.boot {
+  min-height: 100dvh;
+}
+
+/* ---------- 印章和状态戳 ---------- */
+
+.logo {
+  flex: none;
+  display: block;
+  object-fit: contain;
+}
+
+.stamp {
+  flex: none;
+  display: inline-block;
+  padding: 4px 8px 4px 11px;
+  border: 2px solid currentColor;
+  border-radius: 3px;
+  outline: 1px solid currentColor;
+  outline-offset: -5px;
+  transform: rotate(-4deg);
+  font-family: var(--font-story);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  line-height: 1.4;
+  white-space: nowrap;
+  color: var(--muted);
+}
+
+.stamp-running {
+  color: var(--seal);
+}
+
+.stamp-paused {
+  color: var(--ink-soft);
+}
+
+.stamp-ended {
+  opacity: 0.7;
+}

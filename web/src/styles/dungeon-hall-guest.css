@@ -1,0 +1,76 @@
+/* ==========================================================================
+   V0.7.1 地下城页（从剧本大厅里单独拿出来），游客看到的「注册以后才能……」
+   ========================================================================== */
+
+/* 最上面一句话：地下城有局外培养 */
+.dungeon-pitch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 24px;
+  margin: 0 0 24px;
+  padding: 14px 18px;
+  border: 1px solid var(--rule);
+  border-left: 4px solid var(--cat-dungeon);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: color-mix(in srgb, var(--cat-dungeon) 7%, var(--field));
+}
+
+.dungeon-pitch-text {
+  flex: 1 1 26em;
+  min-width: 0;
+  font-family: var(--font-story);
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.dungeon-pitch-text strong {
+  color: var(--cat-dungeon);
+}
+
+.dungeon-pitch-link {
+  flex: none;
+}
+
+/* 每个地下城：难度挂在名字旁边，通关记录在简介下面 */
+.dungeon-hall .shelf-head .dungeon-level {
+  color: var(--cat-dungeon);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.dungeon-hall .shelf-head .dungeon-level.size-large {
+  background: color-mix(in srgb, var(--cat-dungeon) 12%, transparent);
+}
+
+.dungeon-hall .clear-records {
+  margin: 10px 0 0;
+}
+
+/* 游客：「注册以后才能……」一句话 */
+.guest-note {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 0 18px;
+  padding: 6px 12px;
+  border-left: 3px solid var(--gold);
+  background: var(--paper-2);
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.guest-note a {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.page-head + .guest-note {
+  margin-top: -8px;
+}
+
+.dungeon-pitch .guest-note {
+  flex: none;
+  margin: 0;
+  background: var(--field);
+}

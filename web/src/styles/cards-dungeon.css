@@ -1,0 +1,932 @@
+/* ==========================================================================
+   V0.7.0 角色卡、地下城、战斗（规则第二版）
+   ========================================================================== */
+
+:root {
+  --cat-dungeon: #3f4a6b;
+  --hp: #b23a2e;
+  --mp: #2e5aac;
+  --rarity-common: #646a79;
+  --rarity-fine: #2d7563;
+  --rarity-rare: #2e5aac;
+  --rarity-epic: #7a4a9e;
+  --rarity-legendary: #c08a2c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --cat-dungeon: #a9b4dc;
+    --hp: #e2735f;
+    --mp: #8aabf0;
+    --rarity-common: #9a9da6;
+    --rarity-fine: #5bbea3;
+    --rarity-rare: #8aabf0;
+    --rarity-epic: #c39be3;
+    --rarity-legendary: #e0b25a;
+  }
+}
+
+.category-dungeon {
+  color: var(--cat-dungeon);
+}
+
+.shelf-tab-dungeon[aria-selected='true'] {
+  border-bottom-color: var(--cat-dungeon);
+  color: var(--cat-dungeon);
+}
+
+.spine-dungeon {
+  --spine: var(--cat-dungeon);
+}
+
+/* 七项属性：一行放不下时两行 */
+.attr-grid-7 {
+  grid-template-columns: repeat(7, 1fr);
+}
+
+@media (max-width: 640px) {
+  .attr-grid-7 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .attr-grid-7 .attr:nth-child(5) {
+    border-left: 0;
+  }
+}
+
+/* 生命值、精神值、敌人的血条 */
+.meter {
+  display: grid;
+  grid-template-columns: 2.6em minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.meter-label {
+  color: var(--muted);
+}
+
+.meter-bar {
+  position: relative;
+  height: 8px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  background: var(--paper-2);
+  overflow: hidden;
+}
+
+.meter-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--hp);
+  transition: width 0.4s ease;
+}
+
+.meter-mp .meter-fill {
+  background: var(--mp);
+}
+
+.meter-enemy .meter-fill {
+  background: var(--ink-soft);
+}
+
+.meter-value {
+  font-family: var(--font-story);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.meter.is-low .meter-value {
+  color: var(--seal);
+}
+
+.meter.is-empty .meter-bar {
+  border-color: var(--seal);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .meter-fill {
+    transition: none;
+  }
+}
+
+.vitals {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vitals-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin: 4px 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+/* 装备：名字的颜色按稀有度 */
+.gear-list,
+.skill-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gear {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+}
+
+.gear-name {
+  font-weight: 700;
+}
+
+.gear-common .gear-name,
+.rarity-common {
+  color: var(--rarity-common);
+}
+
+.gear-fine .gear-name,
+.rarity-fine {
+  color: var(--rarity-fine);
+}
+
+.gear-rare .gear-name,
+.rarity-rare {
+  color: var(--rarity-rare);
+}
+
+.gear-epic .gear-name,
+.rarity-epic {
+  color: var(--rarity-epic);
+}
+
+.gear-legendary .gear-name,
+.rarity-legendary {
+  color: var(--rarity-legendary);
+}
+
+.chip-rare,
+.chip-epic,
+.chip-legendary {
+  border-color: currentColor;
+}
+
+.chip-rare {
+  color: var(--rarity-rare);
+}
+
+.chip-epic {
+  color: var(--rarity-epic);
+}
+
+.chip-legendary {
+  color: var(--rarity-legendary);
+}
+
+.gear-meta,
+.skill-cost {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.gear-ability,
+.skill-text {
+  flex-basis: 100%;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.skill-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+}
+
+.skill-name {
+  font-weight: 700;
+}
+
+/* 地下城的难度、战斗 */
+.dungeon-badge {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin: 0 0 8px;
+  color: var(--cat-dungeon);
+  font-size: 13px;
+}
+
+.dungeon-level {
+  padding: 1px 8px;
+  border: 1.5px solid currentColor;
+  border-radius: 2px;
+  font-weight: 700;
+}
+
+.combat {
+  margin: 8px 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--rule-strong);
+  border-left: 4px solid var(--seal);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--field);
+}
+
+.combat-order {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  margin: 4px 0 8px;
+  padding: 0;
+  font-size: 13px;
+  list-style: none;
+  counter-reset: order;
+}
+
+.combat-order li::before {
+  counter-increment: order;
+  content: counter(order) '.';
+  margin-right: 3px;
+  color: var(--muted);
+}
+
+.combat-order .is-enemy {
+  color: var(--seal);
+}
+
+.combat-enemies {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.combat-enemies li.is-down {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.enemy-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  font-weight: 600;
+}
+
+.enemy-tier {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+/* 叙述里大家都看得到的战况 */
+.turn-events {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 6px 0;
+  padding: 0 0 0 12px;
+  border-left: 2px solid var(--rule-strong);
+  color: var(--ink-soft);
+  font-size: 13px;
+  list-style: none;
+}
+
+.turn-events .is-qiyu {
+  color: var(--gold-deep);
+  font-weight: 700;
+}
+
+/* 我的角色 */
+.characters-page .page-head {
+  margin-bottom: 12px;
+}
+
+.card-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.card-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 18px;
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--cat-dungeon);
+  border-radius: 0 0 var(--radius) var(--radius);
+  background: var(--field);
+}
+
+.card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+.card-head h2 {
+  margin: 0;
+  font-family: var(--font-story);
+  font-size: 22px;
+}
+
+.card-power {
+  color: var(--gold-deep);
+  font-weight: 700;
+}
+
+.card-text {
+  margin: 0;
+  font-size: 14px;
+}
+
+.attr-up {
+  margin-top: 2px;
+  padding: 0 4px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 3px;
+  background: none;
+  color: var(--jade);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.attr-up:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+/* 人物栏（V0.7.1，照魔兽世界）：左右两列格子，中间是名字和属性，下面两只手；卡窄的时候排成一列 */
+.gear-common {
+  --slot-edge: var(--rarity-common);
+}
+
+.gear-fine {
+  --slot-edge: var(--rarity-fine);
+}
+
+.gear-rare {
+  --slot-edge: var(--rarity-rare);
+}
+
+.gear-epic {
+  --slot-edge: var(--rarity-epic);
+}
+
+.gear-legendary {
+  --slot-edge: var(--rarity-legendary);
+}
+
+.doll {
+  container: doll / inline-size;
+}
+
+.doll-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 1fr);
+  grid-template-areas:
+    'left core right'
+    'hands hands hands';
+  gap: 10px;
+}
+
+.doll-col,
+.doll-hands,
+.doll-abilities {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.doll-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* 左边六格、右边八格：左边的拉开，两边一样高 */
+.doll-left {
+  grid-area: left;
+  justify-content: space-between;
+}
+
+.doll-right {
+  grid-area: right;
+}
+
+.doll-hands {
+  grid-area: hands;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  justify-self: center;
+  width: min(100%, 24em);
+}
+
+.doll-core {
+  grid-area: core;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: var(--paper);
+}
+
+.doll-attrs {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.doll-attr {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 6px;
+  padding: 3px 0;
+  border-bottom: 1px dotted var(--rule);
+}
+
+.doll-attr dt {
+  min-width: 2.2em;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.doll-attr dd {
+  margin: 0;
+  font-family: var(--font-story);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.doll-gear {
+  margin-left: 6px;
+  color: var(--jade);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.doll-attr .attr-up {
+  margin: 0 0 0 auto;
+}
+
+.doll-vitals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 10px;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.slot-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1px;
+  width: 100%;
+  min-height: 46px;
+  padding: 4px 8px;
+  border: 1px solid var(--rule-strong);
+  border-left: 3px solid var(--slot-edge, var(--rule-strong));
+  border-radius: 3px;
+  background: var(--field);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.doll-right .slot-cell {
+  align-items: flex-end;
+  border-left: 1px solid var(--rule-strong);
+  border-right: 3px solid var(--slot-edge, var(--rule-strong));
+  text-align: right;
+}
+
+.slot-cell:hover,
+.slot-cell[aria-expanded='true'] {
+  border-color: var(--ink-soft);
+  border-left-color: var(--slot-edge, var(--ink-soft));
+}
+
+.doll-right .slot-cell:hover,
+.doll-right .slot-cell[aria-expanded='true'] {
+  border-left-color: var(--ink-soft);
+  border-right-color: var(--slot-edge, var(--ink-soft));
+}
+
+.slot-cell.is-empty {
+  border-style: dashed;
+  background: transparent;
+}
+
+.slot-cell-label {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+.slot-cell-item {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.slot-cell.is-empty .slot-cell-item {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.doll-abilities {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.doll-abilities .gear-name {
+  margin-right: 8px;
+}
+
+@container doll (max-width: 460px) {
+  .doll-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'core'
+      'left'
+      'right'
+      'hands';
+    gap: 6px;
+  }
+
+  .doll-hands {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    width: 100%;
+  }
+
+  .slot-cell,
+  .doll-right .slot-cell {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 0;
+    padding: 7px 10px;
+    border-left: 3px solid var(--slot-edge, var(--rule-strong));
+    border-right: 1px solid var(--rule-strong);
+    text-align: left;
+  }
+
+  .slot-cell.is-empty,
+  .doll-right .slot-cell.is-empty {
+    border-style: dashed;
+  }
+
+  .slot-cell-label {
+    font-size: 13px;
+  }
+
+  /* 有成长点（每项后面有「+1」）的时候一行一项，不然两项一行 */
+  .doll-attrs:not(.can-grow) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 14px;
+  }
+}
+
+/* 换装备的对话框 */
+.slot-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.slot-current {
+  padding: 8px 10px;
+  border: 1px solid var(--rule-strong);
+  border-left: 3px solid var(--slot-edge, var(--rule-strong));
+  border-radius: 3px;
+  background: var(--field);
+}
+
+.slot-current .slot-off {
+  margin-left: auto;
+}
+
+.slot-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.slot-option {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--slot-edge, var(--rule-strong));
+  border-radius: 3px;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.slot-option:hover:not(:disabled) {
+  border-color: var(--ink-soft);
+  border-left-color: var(--slot-edge, var(--ink-soft));
+  background: var(--field);
+}
+
+.slot-option:disabled {
+  cursor: wait;
+}
+
+.slot-option-worn {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.card-history ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+}
+
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* 「在主页展示」（V0.8.1）：和按钮排在一行 */
+.card-actions .card-on-profile {
+  align-items: center;
+  gap: 6px;
+  margin-right: 6px;
+  padding: 0;
+  font-size: 14px;
+}
+
+.card-actions .card-on-profile input {
+  margin: 0;
+}
+
+.inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.inline-form input {
+  width: 9em;
+}
+
+.inline-form select {
+  width: auto;
+  max-width: 100%;
+}
+
+.chest-bar,
+.manuals {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 12px 0;
+  padding: 10px 14px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--field);
+}
+
+.manuals {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.chest-result {
+  font-size: 14px;
+}
+
+.attr-editor {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5.5em, 1fr));
+  gap: 8px;
+}
+
+.attr-editor label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+}
+
+.card-form {
+  max-width: 640px;
+  margin: 12px 0;
+  padding: 16px 18px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--field);
+}
+
+.bag-pick label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bag-pick input {
+  width: 4.5em;
+}
+
+.duel-opponents,
+.duel-history {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.duel-opponents li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.duel-result {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--gold);
+  border-radius: var(--radius);
+}
+
+.duel-result h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.duel-result ol {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+}
+
+/* 剧本大厅里地下城的难度；通关记录；结束后「再刷一次」 */
+.shelf-meta .dungeon-level {
+  display: inline-block;
+  margin-right: 8px;
+  color: var(--cat-dungeon);
+  font-size: 12px;
+}
+
+.shelf-meta .dungeon-level.size-large {
+  background: color-mix(in srgb, var(--cat-dungeon) 12%, transparent);
+}
+
+.clear-records {
+  margin: 0 0 10px;
+  font-size: 13px;
+}
+
+.clear-records p {
+  margin: 0 0 4px;
+}
+
+.clear-records ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+}
+
+.replay-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 12px 0;
+}
+
+/* 大厅：筛选公开的对局（V0.7.0） */
+.hall-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 0 0 12px;
+}
+
+.hall-filters .chip-row {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.hall-filters .chip {
+  padding: 2px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.hall-filters .chip:hover {
+  color: var(--ink);
+}
+
+.hall-filters .chip[aria-pressed='true'] {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.hall-filters select {
+  width: auto;
+}
+
+.hall-filter-check {
+  margin: 0;
+}
+
+.hall-filter-search {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+/* 背包、商城里的装备按部位分组（V0.7.1） */
+.bag-subtitle,
+.shop-group-title {
+  margin: 14px 0 0;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--rule-strong);
+  color: var(--ink-soft);
+  font-family: var(--font-story);
+  font-size: 15px;
+  letter-spacing: 0.06em;
+}
+
+.shop-group + .shop-group {
+  margin-top: 6px;
+}
+
+/* 对局里自己的装备：合起来的效果，全部的点开看 */
+.gear-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.gear-summary .vitals-line {
+  margin: 0;
+}
+
+.gear-summary .gear-list {
+  margin: 4px 0;
+}
+
+.gear-all summary {
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.gear-all .gear-list {
+  margin-top: 6px;
+}

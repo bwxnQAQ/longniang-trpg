@@ -1,0 +1,222 @@
+/* ---------- 宠物页：远行、背包、商店、日记、排行 ---------- */
+
+.trip-list,
+.wardrobe,
+.diary-list,
+.rank-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.trip-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.trip {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--field);
+}
+
+.trip-name {
+  font-family: var(--font-story);
+  font-size: 19px;
+}
+
+.trip-meta,
+.trip-gain {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.trip .btn,
+.trip .job-why {
+  align-self: flex-start;
+  margin-top: 6px;
+}
+
+.wardrobe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.wardrobe-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 96px;
+  padding: 10px 12px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--field);
+}
+
+.wardrobe-item.is-on {
+  border-color: var(--gold-deep);
+  box-shadow: inset 0 0 0 1px var(--gold-deep);
+}
+
+.wardrobe-name {
+  font-size: 13px;
+}
+
+.wardrobe-state {
+  font-size: 12px;
+}
+
+.shop-group + .shop-group {
+  margin-top: 18px;
+}
+
+.shop-limited .pet-subhead {
+  color: var(--seal);
+}
+
+.shop-item .dice,
+.shop-item .pet-figure {
+  margin-right: 4px;
+}
+
+/* 日记：一页纸；明信片：带邮票的卡片 */
+.diary-list {
+  display: grid;
+  gap: 14px;
+}
+
+.diary-page {
+  /* 每行 30px，字写在横线上：标题、正文的行高都是 30px，上边不留空，横线正好在每一行的底下 */
+  padding: 0 20px 6px;
+  border-left: 3px solid var(--rule-strong);
+  background: repeating-linear-gradient(transparent 0 29px, var(--rule) 29px 30px);
+  background-color: var(--field);
+}
+
+.diary-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 12px;
+  margin: 0;
+  font-family: var(--font-story);
+  font-size: 17px;
+  line-height: 30px;
+}
+
+.diary-title .muted {
+  font-family: var(--font-ui);
+  font-size: 12px;
+}
+
+.diary-text {
+  margin: 0;
+  font-family: var(--font-story);
+  line-height: 30px;
+}
+
+.postcard {
+  position: relative;
+  max-width: 34em;
+  padding: 16px 92px 14px 20px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 4px;
+  background: var(--field);
+  box-shadow: 3px 3px 0 var(--rule);
+}
+
+.postcard-stamp {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  width: 54px;
+  height: 64px;
+  border: 2px dashed var(--seal);
+  background:
+    radial-gradient(circle at 50% 42%, var(--seal) 0 9px, transparent 10px),
+    linear-gradient(var(--paper-2), var(--paper-2));
+  transform: rotate(4deg);
+}
+
+.postcard-place {
+  margin: 0 0 6px;
+  font-family: var(--font-story);
+  font-size: 19px;
+}
+
+.postcard-text {
+  margin: 0;
+  font-family: var(--font-story);
+  line-height: 1.85;
+}
+
+.postcard-date {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.rank-boards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px 32px;
+}
+
+.rank-row {
+  display: grid;
+  grid-template-columns: 2.2em auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 7px 4px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.rank-row.is-me {
+  background: color-mix(in srgb, var(--gold) 12%, transparent);
+}
+
+.rank-no {
+  font-family: var(--font-story);
+  font-size: 18px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.rank-list .rank-row:nth-child(-n + 3) .rank-no {
+  color: var(--gold-deep);
+  font-weight: 700;
+}
+
+.rank-nopet {
+  width: 40px;
+}
+
+.rank-who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  min-width: 0;
+}
+
+.rank-value {
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rank-mine {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}

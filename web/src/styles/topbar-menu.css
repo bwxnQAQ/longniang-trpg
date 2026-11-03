@@ -1,0 +1,85 @@
+/* ---------- 窄屏：顶栏 ---------- */
+
+@media (max-width: 760px) {
+  .user-menu-name {
+    display: none;
+  }
+
+  .user-menu-button {
+    padding: 3px;
+  }
+}
+
+@media (max-width: 560px) {
+  .page-full {
+    padding: 16px;
+  }
+
+  .user-menu {
+    margin-left: 2px;
+  }
+
+  .topnav a.nav-bell {
+    padding: 6px 4px;
+  }
+}
+
+/* ---------- 顶栏：主菜单在左上角（站名旁边），通知和头像在右上角 ---------- */
+
+.topbar-start {
+  flex: 1 1 auto;
+}
+
+.topnav-main {
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  margin-left: 4px;
+  padding-left: 12px;
+  border-left: 1px solid var(--rule);
+}
+
+.topbar-end {
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+}
+
+/* 菜单项的字不折行（「我的对局」在窄屏上也是一行） */
+.topnav-main a {
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .topnav-main {
+    min-width: 0;
+    margin-left: 0;
+    padding-left: 6px;
+    /* 再窄也不折行：放不下时主菜单自己左右滑 */
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .topnav-main::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* 还有菜单项藏在那一头：那一头淡出去，看得出能滑 */
+  .topnav-main.more-right {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent);
+  }
+
+  .topnav-main.more-left {
+    -webkit-mask-image: linear-gradient(to left, #000 calc(100% - 36px), transparent);
+    mask-image: linear-gradient(to left, #000 calc(100% - 36px), transparent);
+  }
+
+  .topnav-main.more-left.more-right {
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 36px, #000 calc(100% - 36px), transparent);
+    mask-image: linear-gradient(to right, transparent, #000 36px, #000 calc(100% - 36px), transparent);
+  }
+
+  /* 手机上前进后退让位给主菜单（浏览器自己有返回） */
+  .history-nav {
+    display: none;
+  }
+}

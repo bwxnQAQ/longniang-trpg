@@ -1,0 +1,218 @@
+/* 群聊（V0.7.0，「社交」里）：沿用私聊的 conversation、dm-* 样式，这里只放群聊多出来的部分 */
+
+.group-side-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.group-badge {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border: 1.5px solid var(--rule-strong);
+  border-radius: 8px;
+  background: var(--field);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.group-count {
+  font-weight: 400;
+  font-size: 12px;
+}
+
+.group-create,
+.group-add {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.group-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 220px;
+  margin: 0;
+  padding: 4px 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.group-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.group-picker-row:hover {
+  background: var(--field);
+}
+
+.group-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin-right: auto;
+}
+
+.group-title strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.group-title .group-badge {
+  width: 30px;
+  height: 30px;
+}
+
+.group-members {
+  margin: 0 0 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--field);
+}
+
+.group-member-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.group-member-list li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.group-member-actions,
+.group-rename {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+}
+
+.group-rename input {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.group-system {
+  align-self: center;
+  margin: 4px 0;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+  list-style: none;
+}
+
+.group-from {
+  margin: 0 0 2px;
+  font-size: 12px;
+}
+
+.group-from-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+.group-from-link:hover {
+  color: var(--ink);
+}
+
+/* 管理页「聊天记录」（V0.7.0）：所有的群聊和私信 */
+.admin-chats .picker-tabs {
+  margin: 0 0 12px;
+}
+
+.admin-chat-search {
+  display: flex;
+  gap: 8px;
+  max-width: 420px;
+  margin: 0 0 12px;
+}
+
+.admin-chat-search input {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-chats tr.is-current td {
+  background: var(--field);
+}
+
+.admin-chat-last {
+  max-width: 24em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-chat-record {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+
+.admin-chat-title {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.admin-chat-members {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin: 0 0 8px;
+}
+
+.admin-chat-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 60vh;
+  margin: 8px 0 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.admin-chat-lines li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  line-height: 1.6;
+}
+
+.admin-chat-lines li.is-withdrawn > span:not(.admin-chat-at):not(.tag) {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.admin-chat-at {
+  color: var(--muted);
+  font-size: 12px;
+}

@@ -1,0 +1,119 @@
+/* ---------- 头像和人 ---------- */
+
+.avatar {
+  flex: none;
+  display: inline-block;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--paper-2);
+  vertical-align: middle;
+}
+
+.avatar-letter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-story);
+  font-weight: 700;
+  line-height: 1;
+  user-select: none;
+}
+
+.avatar-ink {
+  background: color-mix(in srgb, var(--ink) 13%, var(--paper));
+  color: var(--ink);
+}
+
+.avatar-seal {
+  background: color-mix(in srgb, var(--seal) 15%, var(--paper));
+  color: color-mix(in srgb, var(--seal) 85%, var(--ink));
+}
+
+.avatar-gold {
+  background: color-mix(in srgb, var(--gold) 22%, var(--paper));
+  color: var(--gold-deep);
+}
+
+.avatar-jade {
+  background: color-mix(in srgb, var(--jade) 17%, var(--paper));
+  color: var(--jade);
+}
+
+.avatar-blue {
+  background: color-mix(in srgb, var(--focus) 15%, var(--paper));
+  color: var(--focus);
+}
+
+.avatar-plum {
+  background: color-mix(in srgb, var(--plum) 16%, var(--paper));
+  color: var(--plum);
+}
+
+/* 头像右下角的在线小点 */
+.member-avatar,
+.friend-mini-avatar {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+}
+
+.avatar-online {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--jade);
+  box-shadow: 0 0 0 2px var(--paper);
+}
+
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  text-decoration: none;
+}
+
+.user-chip-name {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+a.user-chip:hover .user-chip-name {
+  text-decoration: underline;
+  text-decoration-color: var(--rule-strong);
+}
+
+.tag-identity {
+  margin-left: 4px;
+}
+
+.tag-row .tag-identity {
+  margin-left: 0;
+}
+
+.tag-owner {
+  border-color: var(--gold);
+  color: var(--gold-deep);
+  font-weight: 600;
+}
+
+.tag-admin {
+  border-color: var(--ink-soft);
+  color: var(--ink);
+}
+
+.tag-guest {
+  border-style: dashed;
+  color: var(--muted);
+}
+
+.tag-watch {
+  border-color: var(--focus);
+  color: var(--focus);
+}

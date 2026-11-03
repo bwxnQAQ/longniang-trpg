@@ -1,0 +1,337 @@
+/* ---------- 评分、短评 ---------- */
+
+.stars {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.stars-glyphs {
+  color: var(--gold);
+  letter-spacing: 1px;
+}
+
+.stars-off {
+  color: var(--rule-strong);
+}
+
+.stars-value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.stars-count,
+.stars-none {
+  color: var(--muted);
+}
+
+.rate-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  margin: 10px 0;
+}
+
+.star-input {
+  display: inline-flex;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.star-input legend {
+  float: left;
+  margin-right: 8px;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.star {
+  position: relative;
+  cursor: pointer;
+  color: var(--rule-strong);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.star input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.star.is-on {
+  color: var(--gold);
+}
+
+.star:has(input:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.rate-comment {
+  flex: 1 1 14em;
+  min-width: 0;
+}
+
+.rate-saved {
+  color: var(--jade);
+  font-size: 13px;
+}
+
+.hall-sort {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 14px;
+}
+
+.hall-sort label {
+  flex: none;
+}
+
+.hall-sort select {
+  width: auto;
+  min-width: 10em;
+}
+
+.shelf-score {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.shelf-endings {
+  color: var(--ink-soft);
+}
+
+.shelf-endings.is-complete {
+  color: var(--gold-deep);
+  font-weight: 600;
+}
+
+.shelf-detail {
+  grid-column: 1 / -1;
+  padding-top: 10px;
+  border-top: 1px dashed var(--rule);
+}
+
+.shelf-detail-endings {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+
+.rating-list {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rating {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 10px;
+  padding: 6px 0;
+  border-bottom: 1px dotted var(--rule);
+  font-size: 14px;
+}
+
+.rating-stars {
+  color: var(--gold);
+}
+
+.rating-who {
+  font-weight: 600;
+}
+
+.rating-text {
+  flex: 1 1 14em;
+  font-family: var(--font-story);
+}
+
+.rating-at {
+  font-size: 12px;
+}
+
+.shelf-tab-rank[aria-selected='true'],
+.shelf-tab-mine[aria-selected='true'] {
+  border-color: var(--gold-deep);
+  color: var(--gold-deep);
+}
+
+/* 对局结束时的打分；AI 生成、导入的剧本是投稿（V0.9.2） */
+.ending-rating,
+.ending-submit {
+  margin: 12px 0;
+  padding: 12px 16px;
+  border: 1px solid var(--gold-deep);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--gold) 8%, var(--field));
+}
+
+.ending-rating-title,
+.ending-submit-title {
+  margin: 0;
+  font-family: var(--font-story);
+  font-size: 17px;
+}
+
+/* ---------- 作品：排行、我的作品、给作者的反馈 ---------- */
+
+.work-rank .rank-row {
+  grid-template-columns: 2.2em minmax(0, 1fr) auto;
+}
+
+.work-rank-title {
+  font-family: var(--font-story);
+}
+
+/* 作者另起一行：每一行都一样高 */
+.work-rank .rank-who > .muted {
+  flex-basis: 100%;
+}
+
+.my-works {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.my-work {
+  --spine: var(--rule-strong);
+  padding: 16px 18px 16px 20px;
+  border: 1px solid var(--rule);
+  border-left: 5px solid var(--spine);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--field);
+}
+
+.my-work-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+.work-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  margin: 12px 0;
+}
+
+.work-stats dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.work-stats dd {
+  margin: 0;
+  font-size: 15px;
+}
+
+.ending-bars {
+  display: grid;
+  gap: 6px;
+  max-width: 36em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ending-bars li {
+  display: grid;
+  grid-template-columns: minmax(6em, 14em) minmax(0, 1fr) 4em;
+  gap: 10px;
+  align-items: center;
+  font-size: 13px;
+}
+
+.ending-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--paper-2);
+}
+
+.ending-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--gold);
+}
+
+.ending-bar-count {
+  color: var(--muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.work-comments,
+.work-feedback {
+  margin-top: 14px;
+}
+
+.feedback-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feedback-item {
+  padding: 10px 12px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper);
+}
+
+.feedback-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 0 0 4px;
+  font-size: 13px;
+}
+
+.feedback-who {
+  font-weight: 600;
+}
+
+.feedback-text {
+  margin: 0;
+  font-family: var(--font-story);
+}
+
+.feedback-reply {
+  margin: 8px 0 0;
+  padding-left: 10px;
+  border-left: 3px solid var(--jade);
+  font-size: 14px;
+}
+
+.feedback-actions {
+  display: flex;
+  gap: 12px;
+  margin: 6px 0 0;
+  font-size: 13px;
+}
+
+.feedback-form textarea {
+  width: 100%;
+}
+
+.author-feedback {
+  margin: 10px 0;
+}

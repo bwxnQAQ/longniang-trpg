@@ -1,0 +1,542 @@
+/* ---------- 阶段4：额度、使用规则、主持工具、管理后台 ---------- */
+
+.credit-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin-bottom: 20px;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.credit-label {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.credit-line.is-out {
+  padding: 8px 14px;
+  border-left: 3px solid var(--seal);
+  background: var(--paper-2);
+  color: var(--ink);
+}
+
+.credit-line.is-out .credit-label {
+  color: var(--seal);
+  font-weight: 600;
+}
+
+.fact-alert {
+  color: var(--seal);
+  font-weight: 600;
+}
+
+.block-hint {
+  display: block;
+  margin-top: 2px;
+}
+
+/* 文件和文件夹的路径：等宽字体，太长了可以在任意地方换行 */
+.path {
+  font-family: var(--font-code);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.steps {
+  margin: 0;
+  padding-left: 1.4em;
+  line-height: 1.8;
+}
+
+.steps li + li {
+  margin-top: 4px;
+}
+
+.cell-alert {
+  color: var(--seal);
+}
+
+.cell-text {
+  max-width: 28em;
+  white-space: pre-line;
+}
+
+.pre-line {
+  white-space: pre-line;
+}
+
+.plain-list {
+  margin: 0;
+  padding-left: 1.2em;
+  font-size: 14px;
+}
+
+.plain-list li + li {
+  margin-top: 4px;
+}
+
+.tag-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tag-row .tag-warn {
+  margin-left: 0;
+}
+
+/* 使用规则：条文编号，方便说“违反了第几条” */
+.usage-rules {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding-left: 1.4em;
+  text-align: left;
+}
+
+.usage-rules li::marker {
+  color: var(--gold-deep);
+  font-weight: 700;
+}
+
+.usage-rules strong {
+  font-weight: 600;
+}
+
+.usage-rules p {
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.auth-panel-wide {
+  max-width: 640px;
+}
+
+.auth-panel-wide .usage-rules {
+  margin: 18px 0 22px;
+}
+
+.rules-details {
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  padding: 8px 0;
+}
+
+.rules-details summary {
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.rules-details .usage-rules {
+  margin-top: 10px;
+}
+
+.agree-choice {
+  font-weight: 600;
+}
+
+/* 主持工具 */
+.host-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+.host-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.host-section > h2 {
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 15px;
+}
+
+.host-section h3 {
+  font-size: 14px;
+}
+
+.host-last {
+  padding: 10px 12px;
+  border-left: 3px solid var(--gold);
+  background: var(--paper-2);
+}
+
+.host-last-action {
+  margin-top: 4px;
+  font-family: var(--font-story);
+  white-space: pre-line;
+}
+
+.host-last-action.muted {
+  font-family: inherit;
+}
+
+/* 别人的角色状态：点“查看”之前只说明会告诉大家 */
+.host-reveal {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  padding: 10px 12px;
+  border: 1px dashed var(--rule-strong);
+  border-radius: var(--radius);
+  color: var(--ink-soft);
+}
+
+.host-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.host-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.host-conditions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.host-conditions legend {
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.host-condition {
+  display: grid;
+  grid-template-columns: minmax(70px, 1fr) minmax(90px, 2fr);
+  gap: 6px;
+}
+
+.host-condition-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  grid-column: 1 / -1;
+}
+
+.host-clue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.host-clue {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.host-clue summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.host-clue summary .tag {
+  margin-left: 6px;
+  font-weight: 400;
+}
+
+.host-clue fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.host-clue-text {
+  margin-top: 4px;
+  color: var(--ink-soft);
+  font-family: var(--font-story);
+  font-size: 14px;
+}
+
+.host-clue-who {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+
+/* 管理后台 */
+.admin-tabs {
+  margin-bottom: 22px;
+}
+
+.admin-body {
+  min-width: 0;
+}
+
+.detail-row > td {
+  padding: 0 0 18px;
+  background: var(--paper-2);
+}
+
+.user-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+
+.user-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px 28px;
+}
+
+.user-detail-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.user-detail-box h3 {
+  font-size: 14px;
+}
+
+.user-detail-box h3:not(:first-child) {
+  margin-top: 8px;
+}
+
+.user-detail-calls summary {
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.violation-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.violation {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 0 14px 14px;
+  border-left: 3px solid var(--seal);
+  border-bottom: 1px solid var(--rule);
+  font-size: 14px;
+}
+
+.violation.is-done {
+  border-left-color: var(--rule-strong);
+  color: var(--ink-soft);
+}
+
+.violation-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+}
+
+.violation-head .tag-warn {
+  margin-left: 0;
+}
+
+.violation details summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.violation-content,
+.json-block {
+  max-height: 320px;
+  margin: 6px 0 0;
+  padding: 10px 12px;
+  overflow: auto;
+  background: var(--paper-2);
+  font-family: var(--font-code);
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ai-switch {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 16px 18px;
+  border-left: 4px solid var(--jade);
+  background: var(--paper-2);
+}
+
+.ai-switch.is-off {
+  border-left-color: var(--seal);
+}
+
+.ai-switch-state {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.ai-switch.is-off .ai-switch-state {
+  color: var(--seal);
+}
+
+/* ---------- 管理页：剧本 ---------- */
+
+.scenario-upload,
+.scenario-upload .inline-form {
+  align-self: stretch;
+}
+
+.scenario-admin-list {
+  margin: 0;
+  padding: 0;
+  border-top: 2px solid var(--ink);
+  list-style: none;
+}
+
+.scenario-admin-list > li {
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.scenario-admin-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 16px;
+}
+
+.scenario-admin-head p {
+  margin: 2px 0 0;
+  font-size: 14px;
+}
+
+.scenario-admin-state {
+  color: var(--ink-soft);
+}
+
+.scenario-admin-list > li.is-dim .scenario-admin-title,
+.scenario-admin-list > li.is-dim .scenario-admin-state {
+  color: var(--muted);
+}
+
+.scenario-admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.scenario-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 0 4px;
+}
+
+.scenario-detail h3 {
+  margin: 6px 0 0;
+  font-size: 15px;
+}
+
+.admin-room .room-head {
+  margin-bottom: 18px;
+}
+
+.admin-host {
+  max-width: 640px;
+}
+
+.admin-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 18px;
+}
+
+.admin-card {
+  padding: 14px 16px;
+  border-top: 2px solid var(--ink);
+  background: var(--field);
+}
+
+.admin-card h3 {
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.admin-card h3 .tag {
+  margin-left: 6px;
+}
+
+.compact-facts {
+  gap: 4px 14px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.admin-log {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-log-entry {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 14px;
+}
+
+.admin-log-entry.kind-narration .pre-line {
+  font-family: var(--font-story);
+}
+
+.admin-log-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin-bottom: 4px;
+}
+
+.admin-log-head .private-mark {
+  margin-left: 0;
+}
+
+.admin-log-action {
+  color: var(--ink-soft);
+}
+
+@media (max-width: 640px) {
+  .user-detail {
+    padding: 12px 0;
+  }
+
+  .host-condition {
+    grid-template-columns: 1fr;
+  }
+}
+
+.callout-alert {
+  margin-bottom: 18px;
+  border-left-color: var(--seal);
+}

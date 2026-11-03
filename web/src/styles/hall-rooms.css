@@ -1,0 +1,55 @@
+/* ---------- 大厅：公开的对局 ---------- */
+
+.hall-intro {
+  max-width: 64ch;
+  margin: -8px 0 20px;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.hall-scenario {
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.hall-row-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.hall-full {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.public-toggle {
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--rule);
+}
+
+/* 顶栏的“账号”：平时写显示名，很窄的手机上（菜单多了一项“大厅”）只写“账号”，免得顶栏挤成两行 */
+.nav-account-short {
+  display: none;
+}
+
+@media (max-width: 420px) {
+  .nav-account-name {
+    display: none;
+  }
+
+  .nav-account-short {
+    display: inline;
+  }
+
+  .topnav a {
+    padding: 6px 4px;
+  }
+}
+
+.table td.nowrap {
+  white-space: nowrap;
+}

@@ -1,0 +1,394 @@
+/* ---------- 通知 ---------- */
+
+.notifications {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.notifications .page-head {
+  margin-bottom: 0;
+}
+
+.notice-list,
+.announcement-full-list,
+.my-reports,
+.announcement-admin-list,
+.friend-list {
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--rule);
+  list-style: none;
+}
+
+.notice {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+  padding: 12px 6px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.notice.is-unread {
+  background: color-mix(in srgb, var(--gold) 7%, transparent);
+  box-shadow: inset 3px 0 0 var(--gold);
+}
+
+.notice-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--paper-2);
+}
+
+.notice-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.notice-text {
+  overflow-wrap: anywhere;
+}
+
+.notice-reply,
+.my-report-reply {
+  padding-left: 10px;
+  border-left: 2px solid var(--gold);
+  color: var(--ink-soft);
+  font-size: 14px;
+  white-space: pre-line;
+}
+
+.notice-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-self: center;
+  gap: 6px;
+}
+
+/* 公告（V0.8.3）：标题一行，点开才有内容 */
+.announcement-full {
+  display: flex;
+  flex-direction: column;
+  padding: 0 6px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.announcement-full h3 {
+  font-family: var(--font-story);
+  font-size: 19px;
+}
+
+.announcement-full-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.announcement-full-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.announcement-full-head:hover .announcement-full-name {
+  text-decoration: underline;
+  text-decoration-color: var(--rule-strong);
+}
+
+.announcement-full-head .announcement-meta {
+  flex: none;
+  font-family: var(--font-ui);
+  font-weight: 400;
+}
+
+.announcement-full .pre-line {
+  max-width: 40em;
+  padding-bottom: 16px;
+  line-height: 1.8;
+}
+
+.announcement-more {
+  align-self: flex-start;
+  margin-top: 12px;
+}
+
+@media (max-width: 560px) {
+  .announcement-full-head {
+    flex-direction: column;
+    gap: 2px;
+  }
+}
+
+@media (max-width: 560px) {
+  .notice {
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+
+  .notice-buttons {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+}
+
+/* ---------- 好友和私聊 ---------- */
+
+.friends-layout {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  align-items: start;
+  gap: 36px;
+}
+
+.friends-side {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.friends-side .page-head {
+  margin-bottom: 0;
+}
+
+.friends-chat {
+  position: sticky;
+  top: calc(var(--topbar-h) + 20px);
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - var(--topbar-h) - 40px - var(--footer-h));
+  min-height: 420px;
+  border-top: 2px solid var(--ink);
+}
+
+.friends-empty {
+  padding: 24px 0;
+}
+
+.add-friend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.add-friend .inline-form .field {
+  flex: 1 1 160px;
+}
+
+.friend-search-results,
+.friend-requests {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.friend-search-results li,
+.friend-requests li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.friend-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+details.friend-group > summary {
+  cursor: pointer;
+}
+
+.friend-request-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.friend-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--rule);
+  text-decoration: none;
+}
+
+.friend-row:hover {
+  background: var(--paper-2);
+}
+
+.friend-row.is-current {
+  background: var(--paper-2);
+  box-shadow: inset 3px 0 0 var(--ink);
+}
+
+.friend-row-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.friend-row-name {
+  font-weight: 600;
+}
+
+.friend-row-last {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.friend-list li {
+  list-style: none;
+}
+
+.conversation {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.conversation-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.conversation-back {
+  display: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.dm-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  margin: 0;
+  padding: 16px 6px 16px 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.dm {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  align-self: flex-start;
+  gap: 2px;
+  max-width: min(80%, 34em);
+}
+
+.dm.is-mine {
+  align-items: flex-end;
+  align-self: flex-end;
+}
+
+.dm-text {
+  padding: 8px 12px;
+  border-radius: 12px 12px 12px 3px;
+  background: var(--paper-2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.dm.is-mine .dm-text {
+  border-radius: 12px 12px 3px 12px;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.dm-meta {
+  display: flex;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.dm-meta .linklike {
+  padding: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.dm-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--rule);
+}
+
+.dm-form textarea {
+  flex: 1;
+  min-height: 56px;
+  resize: none;
+}
+
+.invite-to-room {
+  position: relative;
+  margin-left: auto;
+}
+
+.invite-to-room-box {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(300px, 80vw);
+  padding: 12px;
+  border: 1px solid var(--rule-strong);
+  border-top: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--field);
+  box-shadow: 0 10px 28px rgb(0 0 0 / 0.14);
+}
+
+@media (max-width: 900px) {
+  .friends-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .friends-layout.is-chatting .friends-side,
+  .friends-layout:not(.is-chatting) .friends-chat {
+    display: none;
+  }
+
+  .friends-chat {
+    position: static;
+    height: calc(100dvh - var(--topbar-h) - 80px - var(--footer-h));
+  }
+
+  .conversation-back {
+    display: inline;
+  }
+}

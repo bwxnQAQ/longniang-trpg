@@ -1,0 +1,118 @@
+/* ---------- AI 补位（V0.8.0）：房主交给 AI 演的身份 ---------- */
+/* 「AI」小标记用青花蓝（标志的颜色），和真人的角色区分开；头像是虚线圈 */
+
+.tag.ai-tag {
+  border-color: var(--porcelain, #2e5aac);
+  color: var(--porcelain, #2e5aac);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+/* 选身份：交给 AI 的身份写着「AI 某某」 */
+.role-taken.role-ai {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-soft);
+}
+
+/* 开团：大家的角色里的 AI 队友 */
+.ready-list .member-name .ai-tag {
+  vertical-align: 1px;
+}
+
+/* 开团：房主把没人选的身份交给 AI */
+.ai-seats {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 420px;
+}
+
+.ai-seats-title {
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ai-seat-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ai-seat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.ai-seat-toggle {
+  flex: 1 1 150px;
+  min-width: 0;
+  padding: 4px 0;
+}
+
+.ai-seat-toggle input {
+  accent-color: var(--porcelain, #2e5aac);
+}
+
+.ai-seat:not(.is-on) .ai-seat-toggle {
+  color: var(--muted);
+}
+
+.ai-seat-name {
+  display: flex;
+  flex: 1 1 190px;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ai-seat-name input {
+  flex: 1;
+  min-width: 0;
+  min-height: 32px;
+  padding: 3px 8px;
+}
+
+.ai-seat > .form-error {
+  flex-basis: 100%;
+}
+
+/* 对局页右边的成员列表：成员后面跟着 AI 队友 */
+.avatar.ai-avatar {
+  border: 1.5px dashed var(--porcelain, #2e5aac);
+  background: transparent;
+  color: var(--porcelain, #2e5aac);
+}
+
+.member-ai .member-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 管理页：这一局的 AI 队友 */
+.admin-companions-title {
+  margin-top: 18px;
+  font-size: 16px;
+}
+
+.admin-companions {
+  margin-top: 6px;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-companions li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
